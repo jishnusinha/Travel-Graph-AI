@@ -19,11 +19,76 @@ from app.db.base import Base, utcnow
 from app.db.session import SessionLocal, engine
 
 
+_COLUMN_ADDS: dict[str, list[tuple[str, str]]] = {
+    "trips": [("destination_id", "VARCHAR(36)")],
+    "trip_versions": [
+        ("snapshot_id", "VARCHAR(64)"),
+        ("plan_schema_version", "VARCHAR(32) DEFAULT 'v1'"),
+        ("evidence", "JSON"),
+    ],
+    "trip_activities": [
+        ("attraction_id", "VARCHAR(36)"),
+        ("lat", "FLOAT"),
+        ("lon", "FLOAT"),
+        ("duration_minutes", "INTEGER"),
+        ("citation_ids", "JSON"),
+        ("verification_status", "VARCHAR(32) DEFAULT 'catalog'"),
+        ("cost_low_inr", "INTEGER"),
+        ("cost_high_inr", "INTEGER"),
+        ("cost_basis", "VARCHAR(32)"),
+    ],
+    "agent_runs": [
+        ("knowledge_mode", "VARCHAR(16) DEFAULT 'catalog'"),
+        ("snapshot_id", "VARCHAR(64)"),
+        ("generation_provenance", "VARCHAR(64) DEFAULT 'catalog_fixture'"),
+        ("parent_run_id", "VARCHAR(36)"),
+        ("selected_evidence", "JSON"),
+    ],
+    "evaluation_runs": [
+        ("dataset_version", "VARCHAR(64)"),
+        ("strategy", "VARCHAR(64)"),
+        ("snapshot_id", "VARCHAR(64)"),
+        ("score_provenance", "VARCHAR(64) DEFAULT 'deterministic'"),
+        ("sample_count", "INTEGER"),
+    ],
+}
+
+
+def upgrade_schema_sync(bind) -> None:  # noqa: ANN001
+    """Additive upgrade for databases created before the Terra tables existed."""
+    import app.models  # noqa: F401
+
+    Base.metadata.create_all(bind=bind, checkfirst=True)
+    existing = {
+        row[0]
+        for row in bind.exec_driver_sql("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
+    }
+    for table, columns in _COLUMN_ADDS.items():
+        if table not in existing:
+            continue
+        have = {row[1] for row in bind.exec_driver_sql(f"PRAGMA table_info({table})").fetchall()}
+        for name, ddl in columns:
+            if name not in have:
+                bind.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}")
+    bind.exec_driver_sql(
+        """
+        CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_chunks_fts USING fts5(
+            chunk_id UNINDEXED,
+            snapshot_id UNINDEXED,
+            title,
+            section,
+            text,
+            tokenize='unicode61'
+        )
+        """
+    )
+
+
 async def create_all() -> None:
     import app.models  # noqa: F401  (register all tables on Base.metadata)
 
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(upgrade_schema_sync)
 
 
 async def fail_interrupted_runs() -> int:

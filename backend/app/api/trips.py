@@ -12,7 +12,9 @@ from app.db.session import get_db
 from app.models import AgentRun, Trip, TripDay, TripVersion, User
 from app.schemas.common import MessageOut, Paginated
 from app.schemas.trips import (
+    ActivityReorderIn,
     FavoriteIn,
+    ReplanDayIn,
     ReplanIn,
     RunLaunchOut,
     TripCreateIn,
@@ -30,6 +32,7 @@ from app.services.trip_service import (
     day_count_subquery,
     duplicate_trip,
     load_trip_full,
+    plan_dict_from_trip,
     run_payload_from_trip,
     serialize_trip,
     slugify,
@@ -123,6 +126,7 @@ async def create_trip(
         prompt=payload.prompt,
         interests=list(payload.interests),
         cover_image="/assets/destinations/generic.jpg",
+        destination_id=payload.destination_id,
     )
     db.add(trip)
     await db.flush()
@@ -139,6 +143,7 @@ async def create_trip(
             "budget_inr": payload.budget_inr,
             "interests": list(payload.interests),
             "mode": payload.mode,
+            "destination_id": payload.destination_id,
         }
         run = await create_run(db, user_id=user.id, payload=request_payload, trip_id=trip.id)
     await db.commit()
@@ -330,3 +335,71 @@ async def replan(
     return RunLaunchOut(
         trip_id=trip.id, run_id=run.id, run_public_id=run.public_id, revision_number=run.revision_number
     )
+
+
+@router.post("/{trip_id}/replan-day", response_model=RunLaunchOut, status_code=status.HTTP_202_ACCEPTED)
+async def replan_day(
+    trip_id: str,
+    payload: ReplanDayIn,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> RunLaunchOut:
+    """Regenerate one day. Other days stay as stored. A stale version is rejected."""
+    trip = await load_trip_full(db, trip_id)
+    if trip is None or trip.user_id != user.id:
+        raise not_found("Trip")
+    if trip.current_version != payload.expected_version:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This trip changed. Reload it before replanning a day.")
+    if not any(day.day_number == payload.day_number for day in trip.days):
+        raise not_found("Day")
+    request_payload = run_payload_from_trip(trip)
+    if payload.prompt and payload.prompt.strip():
+        request_payload["prompt"] = payload.prompt.strip()
+    request_payload["replan"] = True
+    request_payload["replan_day"] = payload.day_number
+    request_payload["expected_version"] = payload.expected_version
+    request_payload["prior_days"] = plan_dict_from_trip(trip)["days"]
+    revision = (
+        await db.execute(select(func.count(AgentRun.id)).where(AgentRun.trip_id == trip.id))
+    ).scalar_one() + 1
+    run = await create_run(
+        db, user_id=user.id, payload=request_payload, trip_id=trip.id, revision_number=int(revision)
+    )
+    await db.commit()
+    spawn_run(run.id)
+    return RunLaunchOut(
+        trip_id=trip.id, run_id=run.id, run_public_id=run.public_id, revision_number=run.revision_number
+    )
+
+
+@router.post("/{trip_id}/activities/reorder", response_model=TripOut)
+async def reorder_activity(
+    trip_id: str,
+    payload: ActivityReorderIn,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> TripOut:
+    """Swap one activity with its neighbor and store a new version."""
+    trip = await load_trip_full(db, trip_id)
+    if trip is None or trip.user_id != user.id:
+        raise not_found("Trip")
+    if trip.current_version != payload.expected_version:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This trip changed. Reload it before reordering.")
+    located: tuple[int, int, int] | None = None
+    for day in trip.days:
+        ordered = sorted(day.activities, key=lambda item: item.sort_order)
+        for index, act in enumerate(ordered):
+            if act.id == payload.activity_id:
+                located = (day.day_number, index, len(ordered))
+    if located is None:
+        raise not_found("Activity")
+    day_number, index, count = located
+    swap = index - 1 if payload.direction == "up" else index + 1
+    if swap < 0 or swap >= count:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="That activity is already at the edge of the day.")
+    plan = plan_dict_from_trip(trip)
+    activities = next(day["activities"] for day in plan["days"] if day["day_number"] == day_number)
+    activities[index], activities[swap] = activities[swap], activities[index]
+    await apply_plan_to_trip(db, trip, plan, change_summary=f"Reordered an activity {payload.direction}")
+    await db.commit()
+    return await _full_out(db, trip_id)

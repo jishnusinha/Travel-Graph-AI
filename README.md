@@ -39,6 +39,14 @@ Demo mode needs **no API keys**. Seeded data is labeled as catalog estimates / d
 | `scripts/reset-demo.ps1` | Wipe local DB + reseed (type `RESET`) |
 | `scripts/test.ps1` | Backend pytest + frontend vitest + build |
 
+## Terra
+
+The travel workspace at `/` is **Terra**. Agent Studio stays the dark TravelGraph workspace. `KNOWLEDGE_MODE=catalog` (the default when unset) keeps the original demo planner. `KNOWLEDGE_MODE=rag` uses a local snapshot. See `docs/TERRA.md`.
+
+```powershell
+.\scripts\ingest.ps1 -Limit 12
+```
+
 ## AI modes
 
 `.env` (from `.env.example`):

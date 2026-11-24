@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import { readPendingQuery } from '@/lib/terra'
 
 export function FullScreenLoader() {
   return (
@@ -22,10 +23,18 @@ export function ProtectedRoute({ allowUnboarded = false }: { allowUnboarded?: bo
   return <Outlet />
 }
 
-/** Auth screens bounce signed-in users to the dashboard. */
+/** Auth screens bounce signed-in users onward. A stashed Terra query wins over the dashboard. */
 export function PublicOnlyRoute() {
   const { user, loading } = useAuth()
+  const location = useLocation()
   if (loading) return <FullScreenLoader />
-  if (user) return <Navigate to={user.onboarding_completed ? '/dashboard' : '/onboarding'} replace />
+  if (user) {
+    if (!user.onboarding_completed) return <Navigate to="/onboarding" replace />
+    const pending = readPendingQuery()
+    if (pending) return <Navigate to="/explore" replace state={{ query: pending }} />
+    const from = (location.state as { from?: string } | null)?.from
+    const next = from && from !== '/login' ? from : '/dashboard'
+    return <Navigate to={next} replace />
+  }
   return <Outlet />
 }

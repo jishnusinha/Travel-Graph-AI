@@ -63,6 +63,8 @@ export interface TripActivity {
   image: string
   estimated_cost_inr: number
   sort_order: number
+  citation_ids?: string[]
+  verification_status?: string
 }
 
 export interface TripDay {
@@ -89,7 +91,7 @@ export interface Trip extends Omit<TripListItem, 'day_count'> {
   prompt: string
   interests: string[]
   notes: string
-  budget_breakdown: Record<string, number>
+  budget_breakdown: Record<string, number | string | null>
   transport: Record<string, unknown>
   accommodation: Record<string, unknown>
   current_version: number

@@ -19,6 +19,23 @@ from app.models.entities import (
     User,
     UserPreferences,
 )
+from app.models.knowledge import (
+    Attraction,
+    ChunkDestination,
+    Citation,
+    Destination,
+    DestinationImage,
+    IngestionRun,
+    KnowledgeChunk,
+    KnowledgeDocument,
+    KnowledgeEntity,
+    KnowledgeRelationship,
+    KnowledgeSnapshot,
+    RetrievalHitRow,
+    RetrievalRun,
+    SavedDestination,
+    TravelCostEstimate,
+)
 
 __all__ = [
     "User",
@@ -40,4 +57,19 @@ __all__ = [
     "BenchmarkCase",
     "ModelPricingSnapshot",
     "CostLineItem",
+    "Destination",
+    "Attraction",
+    "KnowledgeSnapshot",
+    "KnowledgeDocument",
+    "KnowledgeChunk",
+    "ChunkDestination",
+    "DestinationImage",
+    "TravelCostEstimate",
+    "KnowledgeEntity",
+    "KnowledgeRelationship",
+    "IngestionRun",
+    "SavedDestination",
+    "RetrievalRun",
+    "RetrievalHitRow",
+    "Citation",
 ]

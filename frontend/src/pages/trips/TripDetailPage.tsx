@@ -16,6 +16,7 @@ import {
   Map as MapIcon,
   MapPin,
   Pencil,
+  Printer,
   RefreshCw,
   Share2,
   Users,
@@ -129,6 +130,7 @@ export default function TripDetailPage() {
                 <Bookmark className={cn('size-4', trip.is_favorite && 'fill-primary text-primary')} /> {trip.is_favorite ? 'Saved' : 'Save'}
               </button>
               <button type="button" onClick={share} className="tg-btn tg-btn-primary tg-btn-sm"><Share2 className="size-4" /> Share</button>
+              <button type="button" onClick={() => window.print()} className="tg-btn tg-btn-secondary tg-btn-sm bg-white text-slate-900"><Printer className="size-4" /> Print</button>
             </div>
           </div>
         </div>
@@ -178,7 +180,19 @@ export default function TripDetailPage() {
                   ))}
                 </ul>
               </div>
-              {day && <DayPanel day={day} />}
+              {day && (
+                <DayPanel
+                  day={day}
+                  onMove={(activityId, direction) => actions.reorder.mutate(
+                    { id: trip.id, activityId, direction, expectedVersion: trip.current_version },
+                    { onError: fail('Could not reorder') },
+                  )}
+                  onReplanDay={() => actions.replanDay.mutate(
+                    { id: trip.id, dayNumber: day.day_number, expectedVersion: trip.current_version },
+                    { onSuccess: (r) => navigate(`/studio/runs/${r.run_public_id}`), onError: fail('Could not replan this day') },
+                  )}
+                />
+              )}
             </div>
           ))}
 
@@ -266,7 +280,15 @@ export default function TripDetailPage() {
   )
 }
 
-function DayPanel({ day }: { day: Trip['days'][number] }) {
+function DayPanel({
+  day,
+  onMove,
+  onReplanDay,
+}: {
+  day: Trip['days'][number]
+  onMove: (activityId: string, direction: 'up' | 'down') => void
+  onReplanDay: () => void
+}) {
   const meta = Object.entries(day.meta ?? {}).filter(([, v]) => typeof v === 'string' && v)
   const total = day.activities.reduce((s, a) => s + a.estimated_cost_inr, 0)
   return (
@@ -283,24 +305,34 @@ function DayPanel({ day }: { day: Trip['days'][number] }) {
             {meta.map(([k, v]) => <li key={k} className="rounded-full border border-line bg-surface-2 px-3 py-1 text-xs font-medium"><span className="text-muted">{titleCase(k)}:</span> {v}</li>)}
           </ul>
         )}
-        <div className="mt-5 flex items-center justify-between"><h3 className="text-sm font-bold">Day Plan</h3><span className="text-xs text-muted">{day.activities.length} activities · {formatINR(total)}</span></div>
+        <div className="mt-5 flex items-center justify-between gap-2">
+          <h3 className="text-sm font-bold">Day Plan</h3>
+          <span className="text-xs text-muted">{day.activities.length} activities · {formatINR(total)}</span>
+          <button type="button" className="tg-btn tg-btn-ghost tg-btn-sm" onClick={onReplanDay}><RefreshCw className="size-3.5" /> Replan this day</button>
+        </div>
         <ol className="mt-3 space-y-2.5">
-          {day.activities.map((a) => <ActivityRow key={a.id} a={a} />)}
+          {day.activities.map((a, index) => (
+            <ActivityRow key={a.id} a={a} first={index === 0} last={index === day.activities.length - 1} onMove={onMove} />
+          ))}
         </ol>
       </div>
     </article>
   )
 }
 
-function ActivityRow({ a }: { a: TripActivity }) {
+function ActivityRow({ a, first, last, onMove }: { a: TripActivity; first: boolean; last: boolean; onMove: (id: string, direction: 'up' | 'down') => void }) {
   return (
     <li className="flex gap-3">
       <span className="tg-mono w-[70px] shrink-0 rounded-lg bg-primary-soft py-1.5 text-center text-[11px] font-medium text-primary-ink">{a.time_label}</span>
       <div className="flex min-w-0 flex-1 items-center gap-3 rounded-xl border border-line p-3">
+        <div className="flex flex-col">
+          <button type="button" className="text-xs text-muted disabled:opacity-30" aria-label={`Move ${a.title} up`} disabled={first} onClick={() => onMove(a.id, 'up')}>Up</button>
+          <button type="button" className="text-xs text-muted disabled:opacity-30" aria-label={`Move ${a.title} down`} disabled={last} onClick={() => onMove(a.id, 'down')}>Down</button>
+        </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold">{a.title}</p>
           {a.description && <p className="text-xs text-muted">{a.description}</p>}
-          <p className="mt-1 flex items-center gap-2 text-[11px]"><span className="rounded-md bg-surface-2 px-1.5 py-0.5 capitalize text-muted">{a.category}</span>{a.estimated_cost_inr > 0 && <span className="font-semibold">{formatINR(a.estimated_cost_inr)}</span>}</p>
+          <p className="mt-1 flex items-center gap-2 text-[11px]"><span className="rounded-md bg-surface-2 px-1.5 py-0.5 capitalize text-muted">{a.category}</span>{a.estimated_cost_inr > 0 && <span className="font-semibold">{formatINR(a.estimated_cost_inr)}</span>}{a.verification_status && a.verification_status !== 'catalog' && <span className="text-muted">{a.verification_status}</span>}{(a.citation_ids?.length ?? 0) > 0 && <span className="text-muted">{a.citation_ids?.length} sources</span>}</p>
         </div>
         {a.image && <CoverImage src={a.image} className="hidden size-14 shrink-0 rounded-lg sm:block" />}
       </div>
@@ -328,6 +360,15 @@ function KeyValueCard({ title, icon: Icon, data, emptyHint }: { title: string; i
 }
 
 function BudgetPanel({ trip }: { trip: Trip }) {
+  if (trip.budget_breakdown?.verification_status === 'unknown') {
+    return (
+      <section className="tg-card p-5">
+        <h2 className="mb-2 text-lg font-bold">Budget</h2>
+        <p className="text-sm">Budget fit is unknown. Missing estimates were not filled with catalog prices.</p>
+        <p className="mt-2 text-xs text-muted">{String(trip.budget_breakdown.note || '')}</p>
+      </section>
+    )
+  }
   const rows = Object.entries(trip.budget_breakdown ?? {}).filter(([k, v]) => !['total', 'remaining'].includes(k) && typeof v === 'number')
   const slices = rows.map(([k, v]) => ({ name: titleCase(k), value: v as number }))
   if (!slices.length) return <EmptyState icon={Wallet} title="No budget breakdown" description="A breakdown appears once the agents finish planning." />

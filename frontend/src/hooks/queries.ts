@@ -125,6 +125,22 @@ export function useTripActions() {
         void qc.invalidateQueries({ queryKey: ['runs'] })
       },
     }),
+    replanDay: useMutation({
+      mutationFn: ({ id, dayNumber, expectedVersion }: { id: string; dayNumber: number; expectedVersion: number }) =>
+        api.post<RunLaunchOut>(`/trips/${id}/replan-day`, { day_number: dayNumber, expected_version: expectedVersion }),
+      onSuccess: () => {
+        invalidate()
+        void qc.invalidateQueries({ queryKey: ['runs'] })
+      },
+    }),
+    reorder: useMutation({
+      mutationFn: ({ id, activityId, direction, expectedVersion }: { id: string; activityId: string; direction: 'up' | 'down'; expectedVersion: number }) =>
+        api.post<Trip>(`/trips/${id}/activities/reorder`, { activity_id: activityId, direction, expected_version: expectedVersion }),
+      onSuccess: (t) => {
+        qc.setQueryData(qk.trip(t.id), t)
+        void qc.invalidateQueries({ queryKey: qk.versions(t.id) })
+      },
+    }),
     restore: useMutation({
       mutationFn: ({ id, version }: { id: string; version: number }) =>
         api.post<Trip>(`/trips/${id}/versions/${version}/restore`),

@@ -1,10 +1,10 @@
-import { Home, Luggage, Sparkles, Workflow } from 'lucide-react'
+import { Compass, Home, Luggage, Workflow } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
 const ITEMS = [
   { to: '/dashboard', label: 'Home', icon: Home, active: (p: string) => p === '/dashboard' },
-  { to: '/trips/new', label: 'Plan', icon: Sparkles, active: (p: string) => p === '/trips/new' },
+  { to: '/explore', label: 'Explore', icon: Compass, active: (p: string) => p === '/explore' || p.startsWith('/explore/') || p.startsWith('/destinations/') || p === '/saved' },
   {
     to: '/trips',
     label: 'My Trips',

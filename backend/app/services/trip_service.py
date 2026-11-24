@@ -124,7 +124,10 @@ async def apply_plan_to_trip(
     trip.origin = str(plan.get("origin") or trip.origin or "")
     trip.travelers = int(plan.get("travelers") or trip.travelers or 2)
     trip.budget_inr = int(plan.get("budget_inr") or trip.budget_inr or 0)
-    trip.estimated_cost_inr = int(plan.get("estimated_cost_inr") or 0)
+    raw_estimate = plan.get("estimated_cost_inr")
+    trip.estimated_cost_inr = int(raw_estimate or 0)
+    if plan.get("destination_id"):
+        trip.destination_id = str(plan["destination_id"])
     trip.budget_breakdown = plan.get("budget_breakdown") or {}
     trip.transport = plan.get("transport") or {}
     trip.accommodation = plan.get("accommodation") or {}
@@ -166,6 +169,15 @@ async def apply_plan_to_trip(
                     image=act.get("image") or "",
                     estimated_cost_inr=int(act.get("estimated_cost_inr") or 0),
                     sort_order=i,
+                    attraction_id=act.get("attraction_id"),
+                    lat=act.get("lat"),
+                    lon=act.get("lon"),
+                    duration_minutes=act.get("duration_minutes"),
+                    citation_ids=list(act.get("citation_ids") or []),
+                    verification_status=act.get("verification_status") or "catalog",
+                    cost_low_inr=act.get("cost_low_inr"),
+                    cost_high_inr=act.get("cost_high_inr"),
+                    cost_basis=act.get("cost_basis"),
                 )
             )
 
@@ -190,6 +202,9 @@ async def apply_plan_to_trip(
                 version=version,
                 snapshot=plan,
                 change_summary=change_summary[:255],
+                snapshot_id=plan.get("snapshot_id"),
+                plan_schema_version="terra-v1" if plan.get("generation_mode") else "v1",
+                evidence={"citations": plan.get("citations") or [], "generation_mode": plan.get("generation_mode")},
             )
         )
     await db.flush()
@@ -315,3 +330,53 @@ def run_payload_from_trip(trip: Trip, overrides: dict[str, Any] | None = None) -
         if value is not None:
             payload[key] = value
     return payload
+
+
+def plan_dict_from_trip(trip: Trip) -> dict[str, Any]:
+    """Current stored itinerary, suitable for a new version snapshot."""
+    return {
+        "title": trip.plan_title or trip.title,
+        "destination": trip.destination,
+        "destination_id": trip.destination_id,
+        "origin": trip.origin,
+        "start_date": trip.start_date.isoformat() if trip.start_date else None,
+        "end_date": trip.end_date.isoformat() if trip.end_date else None,
+        "travelers": trip.travelers,
+        "budget_inr": trip.budget_inr,
+        "estimated_cost_inr": trip.estimated_cost_inr,
+        "budget_breakdown": dict(trip.budget_breakdown or {}),
+        "transport": dict(trip.transport or {}),
+        "accommodation": dict(trip.accommodation or {}),
+        "days": [
+            {
+                "day_number": day.day_number,
+                "title": day.title,
+                "summary": day.summary,
+                "area": day.area,
+                "image": day.image,
+                "meta": dict(day.meta or {}),
+                "activities": [
+                    {
+                        "time_label": act.time_label,
+                        "category": act.category,
+                        "title": act.title,
+                        "description": act.description,
+                        "image": act.image,
+                        "estimated_cost_inr": act.estimated_cost_inr,
+                        "attraction_id": act.attraction_id,
+                        "lat": act.lat,
+                        "lon": act.lon,
+                        "duration_minutes": act.duration_minutes,
+                        "citation_ids": list(act.citation_ids or []),
+                        "verification_status": act.verification_status,
+                        "cost_low_inr": act.cost_low_inr,
+                        "cost_high_inr": act.cost_high_inr,
+                        "cost_basis": act.cost_basis,
+                    }
+                    for act in sorted(day.activities, key=lambda item: item.sort_order)
+                ],
+            }
+            for day in sorted(trip.days, key=lambda item: item.day_number)
+        ],
+    }
+

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "waterfalls-hills",
+    "query": "quiet hills and waterfalls",
+    "expected_slug": "sohra",
+    "notes": "Reviewed against the synthetic fixture and any snapshot that actually contains Sohra."
+  },
+  {
+    "id": "coast-beaches",
+    "query": "beaches and the sea",
+    "expected_slug": "goa",
+    "notes": "Expected only when a Goa document is in the active snapshot."
+  }
+]

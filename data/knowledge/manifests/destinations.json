@@ -1,0 +1,819 @@
+{
+  "version": 1,
+  "note": "Coordinates marked approximate are public centroids pending Wikidata confirmation during ingest. They are not surveyed boundaries.",
+  "destinations": [
+    {
+      "slug": "goa",
+      "name": "Goa",
+      "kind": "region",
+      "region": "Goa",
+      "aliases": [
+        "Goa"
+      ],
+      "wikivoyage_title": "Goa",
+      "lat": 15.4909,
+      "lon": 73.8278,
+      "coordinate_status": "existing_catalog",
+      "themes": [
+        "beaches"
+      ]
+    },
+    {
+      "slug": "manali",
+      "name": "Manali",
+      "kind": "city",
+      "region": "Himachal Pradesh",
+      "aliases": [
+        "Manali"
+      ],
+      "wikivoyage_title": "Manali",
+      "lat": 32.2396,
+      "lon": 77.1887,
+      "coordinate_status": "existing_catalog",
+      "themes": [
+        "mountains"
+      ]
+    },
+    {
+      "slug": "jaipur",
+      "name": "Jaipur",
+      "kind": "city",
+      "region": "Rajasthan",
+      "aliases": [
+        "Jaipur"
+      ],
+      "wikivoyage_title": "Jaipur",
+      "lat": 26.9124,
+      "lon": 75.7873,
+      "coordinate_status": "existing_catalog",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "udaipur",
+      "name": "Udaipur",
+      "kind": "city",
+      "region": "Rajasthan",
+      "aliases": [
+        "Udaipur"
+      ],
+      "wikivoyage_title": "Udaipur",
+      "lat": 24.5854,
+      "lon": 73.7125,
+      "coordinate_status": "existing_catalog",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "munnar",
+      "name": "Munnar",
+      "kind": "city",
+      "region": "Kerala",
+      "aliases": [
+        "Munnar"
+      ],
+      "wikivoyage_title": "Munnar",
+      "lat": 10.0889,
+      "lon": 77.0595,
+      "coordinate_status": "existing_catalog",
+      "themes": [
+        "nature",
+        "mountains"
+      ]
+    },
+    {
+      "slug": "kerala-backwaters",
+      "name": "Kerala Backwaters",
+      "kind": "area",
+      "region": "Kerala",
+      "aliases": [
+        "Kerala",
+        "Alappuzha",
+        "Backwaters"
+      ],
+      "wikivoyage_title": "Kerala",
+      "lat": 9.4981,
+      "lon": 76.3388,
+      "coordinate_status": "existing_catalog",
+      "themes": [
+        "nature"
+      ]
+    },
+    {
+      "slug": "darjeeling",
+      "name": "Darjeeling",
+      "kind": "city",
+      "region": "North Bengal",
+      "aliases": [
+        "Darjeeling"
+      ],
+      "wikivoyage_title": "Darjeeling",
+      "lat": 27.036,
+      "lon": 88.2627,
+      "coordinate_status": "existing_catalog",
+      "themes": [
+        "mountains"
+      ]
+    },
+    {
+      "slug": "rishikesh",
+      "name": "Rishikesh",
+      "kind": "city",
+      "region": "Uttarakhand",
+      "aliases": [
+        "Rishikesh"
+      ],
+      "wikivoyage_title": "Rishikesh",
+      "lat": 30.0869,
+      "lon": 78.2676,
+      "coordinate_status": "existing_catalog",
+      "themes": [
+        "nature"
+      ]
+    },
+    {
+      "slug": "shillong",
+      "name": "Shillong",
+      "kind": "city",
+      "region": "Meghalaya",
+      "aliases": [
+        "Shillong"
+      ],
+      "wikivoyage_title": "Shillong",
+      "lat": 25.5788,
+      "lon": 91.8933,
+      "coordinate_status": "approximate_centroid",
+      "themes": [
+        "mountains",
+        "culture"
+      ]
+    },
+    {
+      "slug": "sohra",
+      "name": "Sohra",
+      "kind": "village",
+      "region": "Meghalaya",
+      "aliases": [
+        "Sohra",
+        "Cherrapunji",
+        "Cherrapunjee"
+      ],
+      "wikivoyage_title": "Cherrapunji",
+      "lat": 25.27,
+      "lon": 91.73,
+      "coordinate_status": "approximate_centroid",
+      "themes": [
+        "nature",
+        "mountains"
+      ]
+    },
+    {
+      "slug": "gangtok",
+      "name": "Gangtok",
+      "kind": "city",
+      "region": "Sikkim",
+      "aliases": [
+        "Gangtok"
+      ],
+      "wikivoyage_title": "Gangtok",
+      "lat": 27.3389,
+      "lon": 88.6065,
+      "coordinate_status": "approximate_centroid",
+      "themes": [
+        "mountains",
+        "culture"
+      ]
+    },
+    {
+      "slug": "pelling",
+      "name": "Pelling",
+      "kind": "city",
+      "region": "Sikkim",
+      "aliases": [
+        "Pelling"
+      ],
+      "wikivoyage_title": "Pelling",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "mountains"
+      ]
+    },
+    {
+      "slug": "ziro",
+      "name": "Ziro",
+      "kind": "city",
+      "region": "Arunachal Pradesh",
+      "aliases": [
+        "Ziro"
+      ],
+      "wikivoyage_title": "Ziro",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "nature",
+        "culture"
+      ]
+    },
+    {
+      "slug": "mawlynnong",
+      "name": "Mawlynnong",
+      "kind": "village",
+      "region": "Meghalaya",
+      "aliases": [
+        "Mawlynnong"
+      ],
+      "wikivoyage_title": "Mawlynnong",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "nature"
+      ]
+    },
+    {
+      "slug": "dawki",
+      "name": "Dawki",
+      "kind": "village",
+      "region": "Meghalaya",
+      "aliases": [
+        "Dawki"
+      ],
+      "wikivoyage_title": "Dawki",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "nature"
+      ]
+    },
+    {
+      "slug": "jowai",
+      "name": "Jowai",
+      "kind": "city",
+      "region": "Meghalaya",
+      "aliases": [
+        "Jowai"
+      ],
+      "wikivoyage_title": "Jowai",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "nongriat",
+      "name": "Nongriat",
+      "kind": "village",
+      "region": "Meghalaya",
+      "aliases": [
+        "Nongriat"
+      ],
+      "wikivoyage_title": "Nongriat",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "nature"
+      ]
+    },
+    {
+      "slug": "mawsynram",
+      "name": "Mawsynram",
+      "kind": "village",
+      "region": "Meghalaya",
+      "aliases": [
+        "Mawsynram"
+      ],
+      "wikivoyage_title": "Mawsynram",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "nature"
+      ]
+    },
+    {
+      "slug": "tura",
+      "name": "Tura",
+      "kind": "city",
+      "region": "Meghalaya",
+      "aliases": [
+        "Tura"
+      ],
+      "wikivoyage_title": "Tura",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "mountains"
+      ]
+    },
+    {
+      "slug": "ravangla",
+      "name": "Ravangla",
+      "kind": "city",
+      "region": "Sikkim",
+      "aliases": [
+        "Ravangla"
+      ],
+      "wikivoyage_title": "Ravangla",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "mountains"
+      ]
+    },
+    {
+      "slug": "namchi",
+      "name": "Namchi",
+      "kind": "city",
+      "region": "Sikkim",
+      "aliases": [
+        "Namchi"
+      ],
+      "wikivoyage_title": "Namchi",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "yuksom",
+      "name": "Yuksom",
+      "kind": "village",
+      "region": "Sikkim",
+      "aliases": [
+        "Yuksom"
+      ],
+      "wikivoyage_title": "Yuksom",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "lachung",
+      "name": "Lachung",
+      "kind": "village",
+      "region": "Sikkim",
+      "aliases": [
+        "Lachung"
+      ],
+      "wikivoyage_title": "Lachung",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "mountains"
+      ]
+    },
+    {
+      "slug": "lachen",
+      "name": "Lachen",
+      "kind": "village",
+      "region": "Sikkim",
+      "aliases": [
+        "Lachen"
+      ],
+      "wikivoyage_title": "Lachen",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "mountains"
+      ]
+    },
+    {
+      "slug": "zuluk",
+      "name": "Zuluk",
+      "kind": "village",
+      "region": "Sikkim",
+      "aliases": [
+        "Zuluk"
+      ],
+      "wikivoyage_title": "Zuluk",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "mountains"
+      ]
+    },
+    {
+      "slug": "kalimpong",
+      "name": "Kalimpong",
+      "kind": "city",
+      "region": "North Bengal",
+      "aliases": [
+        "Kalimpong"
+      ],
+      "wikivoyage_title": "Kalimpong",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "mountains"
+      ]
+    },
+    {
+      "slug": "kurseong",
+      "name": "Kurseong",
+      "kind": "city",
+      "region": "North Bengal",
+      "aliases": [
+        "Kurseong"
+      ],
+      "wikivoyage_title": "Kurseong",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "mountains"
+      ]
+    },
+    {
+      "slug": "mirik",
+      "name": "Mirik",
+      "kind": "city",
+      "region": "North Bengal",
+      "aliases": [
+        "Mirik"
+      ],
+      "wikivoyage_title": "Mirik",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "nature"
+      ]
+    },
+    {
+      "slug": "lava",
+      "name": "Lava",
+      "kind": "village",
+      "region": "North Bengal",
+      "aliases": [
+        "Lava"
+      ],
+      "wikivoyage_title": "Lava",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "mountains"
+      ]
+    },
+    {
+      "slug": "lolegaon",
+      "name": "Lolegaon",
+      "kind": "village",
+      "region": "North Bengal",
+      "aliases": [
+        "Lolegaon"
+      ],
+      "wikivoyage_title": "Lolegaon",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "mountains"
+      ]
+    },
+    {
+      "slug": "dooars",
+      "name": "Dooars",
+      "kind": "area",
+      "region": "North Bengal",
+      "aliases": [
+        "Dooars"
+      ],
+      "wikivoyage_title": "Dooars",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "nature"
+      ]
+    },
+    {
+      "slug": "tawang",
+      "name": "Tawang",
+      "kind": "city",
+      "region": "Arunachal Pradesh",
+      "aliases": [
+        "Tawang"
+      ],
+      "wikivoyage_title": "Tawang",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "culture",
+        "mountains"
+      ]
+    },
+    {
+      "slug": "bomdila",
+      "name": "Bomdila",
+      "kind": "city",
+      "region": "Arunachal Pradesh",
+      "aliases": [
+        "Bomdila"
+      ],
+      "wikivoyage_title": "Bomdila",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "mountains"
+      ]
+    },
+    {
+      "slug": "dirang",
+      "name": "Dirang",
+      "kind": "city",
+      "region": "Arunachal Pradesh",
+      "aliases": [
+        "Dirang"
+      ],
+      "wikivoyage_title": "Dirang",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "mountains"
+      ]
+    },
+    {
+      "slug": "itanagar",
+      "name": "Itanagar",
+      "kind": "city",
+      "region": "Arunachal Pradesh",
+      "aliases": [
+        "Itanagar"
+      ],
+      "wikivoyage_title": "Itanagar",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "pasighat",
+      "name": "Pasighat",
+      "kind": "city",
+      "region": "Arunachal Pradesh",
+      "aliases": [
+        "Pasighat"
+      ],
+      "wikivoyage_title": "Pasighat",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "nature"
+      ]
+    },
+    {
+      "slug": "mechuka",
+      "name": "Mechuka",
+      "kind": "village",
+      "region": "Arunachal Pradesh",
+      "aliases": [
+        "Mechuka"
+      ],
+      "wikivoyage_title": "Mechuka",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "mountains"
+      ]
+    },
+    {
+      "slug": "guwahati",
+      "name": "Guwahati",
+      "kind": "city",
+      "region": "Assam",
+      "aliases": [
+        "Guwahati"
+      ],
+      "wikivoyage_title": "Guwahati",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "kaziranga",
+      "name": "Kaziranga",
+      "kind": "area",
+      "region": "Assam",
+"aliases": [
+      "Kaziranga",
+      "Kaziranga National Park"
+    ],
+      "wikivoyage_title": "Kaziranga National Park",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "nature"
+      ]
+    },
+    {
+      "slug": "majuli",
+      "name": "Majuli",
+      "kind": "area",
+      "region": "Assam",
+      "aliases": [
+        "Majuli"
+      ],
+      "wikivoyage_title": "Majuli",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "sivasagar",
+      "name": "Sivasagar",
+      "kind": "city",
+      "region": "Assam",
+      "aliases": [
+        "Sivasagar"
+      ],
+      "wikivoyage_title": "Sivasagar",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "tezpur",
+      "name": "Tezpur",
+      "kind": "city",
+      "region": "Assam",
+      "aliases": [
+        "Tezpur"
+      ],
+      "wikivoyage_title": "Tezpur",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "kohima",
+      "name": "Kohima",
+      "kind": "city",
+      "region": "Nagaland",
+      "aliases": [
+        "Kohima"
+      ],
+      "wikivoyage_title": "Kohima",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "dimapur",
+      "name": "Dimapur",
+      "kind": "city",
+      "region": "Nagaland",
+      "aliases": [
+        "Dimapur"
+      ],
+      "wikivoyage_title": "Dimapur",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "dzukou-valley",
+      "name": "Dzükou Valley",
+      "kind": "area",
+      "region": "Nagaland",
+      "aliases": [
+        "Dzükou Valley"
+      ],
+      "wikivoyage_title": "Dzükou Valley",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "nature"
+      ]
+    },
+    {
+      "slug": "mokokchung",
+      "name": "Mokokchung",
+      "kind": "city",
+      "region": "Nagaland",
+      "aliases": [
+        "Mokokchung"
+      ],
+      "wikivoyage_title": "Mokokchung",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "varanasi",
+      "name": "Varanasi",
+      "kind": "city",
+      "region": "Uttar Pradesh",
+      "aliases": [
+        "Varanasi"
+      ],
+      "wikivoyage_title": "Varanasi",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "hampi",
+      "name": "Hampi",
+      "kind": "area",
+      "region": "Karnataka",
+      "aliases": [
+        "Hampi"
+      ],
+      "wikivoyage_title": "Hampi",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "mysuru",
+      "name": "Mysuru",
+      "kind": "city",
+      "region": "Karnataka",
+"aliases": [
+      "Mysuru",
+      "Mysore"
+    ],
+      "wikivoyage_title": "Mysore",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "culture"
+      ]
+    },
+    {
+      "slug": "puducherry",
+      "name": "Puducherry",
+      "kind": "city",
+      "region": "Puducherry",
+      "aliases": [
+        "Puducherry"
+      ],
+      "wikivoyage_title": "Puducherry",
+      "lat": null,
+      "lon": null,
+      "coordinate_status": "unknown",
+      "themes": [
+        "beaches",
+        "culture"
+      ]
+    }
+  ]
+}

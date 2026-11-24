@@ -58,6 +58,7 @@ export default function DashboardPage() {
           <p className="mt-3 max-w-lg text-slate-700">
             {d?.greeting_name ? `Hi ${d.greeting_name} — ` : ''}plan personalized journeys with a multi-agent AI system that researches, creates, and optimizes your travel experience.
           </p>
+          <p className="mt-2 text-sm"><Link to="/explore" className="font-semibold text-primary-strong underline">Explore destinations with Terra</Link> before planning, or keep using this catalog prompt.</p>
           <form onSubmit={generate} className="mt-6 flex flex-col gap-2 rounded-2xl bg-white p-2 shadow-lg sm:flex-row sm:items-center">
             <Sparkles className="ml-2 hidden size-5 shrink-0 text-primary sm:block" aria-hidden />
             <label htmlFor="hero-prompt" className="sr-only">Describe your trip</label>

@@ -16,6 +16,9 @@ os.environ.update(
     {
         "APP_ENV": "test",
         "AI_MODE": "demo",
+        "KNOWLEDGE_MODE": "catalog",
+        "ALLOW_NETWORK_TOOLS": "false",
+        "ALLOW_MODEL_DOWNLOAD": "false",
         "OPENAI_API_KEY": "",
         "OPENAI_MODEL": "",
         "DATABASE_URL": f"sqlite+aiosqlite:///{(_TMP / 'test.sqlite').as_posix()}",

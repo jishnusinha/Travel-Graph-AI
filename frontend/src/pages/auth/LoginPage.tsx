@@ -9,6 +9,7 @@ import { Field, PasswordField } from '@/components/ui/Field'
 import { useAuth } from '@/context/AuthContext'
 import { ApiError } from '@/lib/api'
 import { loginSchema, type LoginForm } from '@/lib/validation'
+import { readPendingQuery } from '@/lib/terra'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -31,7 +32,10 @@ export default function LoginPage() {
     setServerError(null)
     try {
       const user = await login(values)
-      navigate(user.onboarding_completed ? (from ?? '/dashboard') : '/onboarding', { replace: true })
+      const pending = readPendingQuery()
+      if (!user.onboarding_completed) navigate('/onboarding', { replace: true })
+      else if (pending) navigate('/explore', { replace: true, state: { query: pending } })
+      else navigate(from ?? '/dashboard', { replace: true })
     } catch (e) {
       setServerError(
         e instanceof ApiError

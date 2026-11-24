@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api import analytics, auth, evaluations, health, me, runs, trips
+from app.api import analytics, auth, evaluations, health, me, runs, terra, trips
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(health.router)
@@ -12,3 +12,5 @@ api_router.include_router(trips.router)
 api_router.include_router(runs.router)
 api_router.include_router(evaluations.router)
 api_router.include_router(analytics.router)
+api_router.include_router(terra.public_router)
+api_router.include_router(terra.router)
