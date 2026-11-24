@@ -1,10 +1,17 @@
 ﻿# TravelGraph AI — Windows setup
-param([switch]$SkipModels)
+param(
+  [switch]$SkipModels,
+  [switch]$CatalogOnly
+)
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
 
 Write-Host "==> TravelGraph AI setup" -ForegroundColor Cyan
+if ($CatalogOnly) {
+  $SkipModels = $true
+  Write-Host "CatalogOnly: skipping knowledge model download and snapshot rebuild." -ForegroundColor Yellow
+}
 
 function Assert-Cmd($Name) {
   if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
@@ -53,5 +60,8 @@ if (-not $SkipModels) {
 Write-Host ""
 Write-Host "Setup complete." -ForegroundColor Green
 Write-Host "Demo login: demo@travelgraph.local / TravelGraphDemo!2026"
-Write-Host "Offline retrieval: .\scripts\prepare-knowledge.ps1"
+if (-not $CatalogOnly) {
+  Write-Host "Offline retrieval: .\scripts\prepare-knowledge.ps1"
+}
+Write-Host "Health check: .\scripts\doctor.ps1"
 Write-Host "Next: .\scripts\dev.ps1   or start backend + frontend separately"

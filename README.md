@@ -31,7 +31,10 @@ Demo mode needs **no API keys**. Seeded data is labeled as catalog estimates / d
 
 | Script | Purpose |
 |---|---|
-| `scripts/setup.ps1` | venv, deps, `.env`, migrate, seed |
+| `scripts/setup.ps1` | venv, deps, `.env`, migrate, seed (+ models unless `-SkipModels` / `-CatalogOnly`) |
+| `scripts/doctor.ps1` | Offline-demo health check (venv, models, snapshot, ports) |
+| `scripts/prepare-knowledge.ps1` | Download local models and rebuild `india-v1` from cache |
+| `scripts/evaluate-rag.ps1` | Score reviewed retrieval cases |
 | `scripts/start-backend.ps1` | Uvicorn on :8000 |
 | `scripts/start-frontend.ps1` | Vite on :5173 |
 | `scripts/dev.ps1` | Both in separate windows |
@@ -41,10 +44,19 @@ Demo mode needs **no API keys**. Seeded data is labeled as catalog estimates / d
 
 ## Terra
 
-The travel workspace at `/` is **Terra**. Agent Studio stays the dark TravelGraph workspace. `KNOWLEDGE_MODE=catalog` (the default when unset) keeps the original demo planner. `KNOWLEDGE_MODE=rag` uses a local snapshot. See `docs/TERRA.md`.
+The travel workspace at `/` is **Terra**. Agent Studio stays the dark TravelGraph workspace. `KNOWLEDGE_MODE=catalog` (the default when unset) keeps the original demo planner. `KNOWLEDGE_MODE=rag` uses a local snapshot. See `docs/TERRA.md`, `docs/DATA_SOURCES.md`, and `docs/EVALUATION_REPORT.md`.
 
 ```powershell
-.\scripts\ingest.ps1 -Limit 12
+.\scripts\setup.ps1                  # full offline-ready setup
+.\scripts\doctor.ps1                 # verify models + india-v1
+.\scripts\prepare-knowledge.ps1      # rebuild snapshot if needed
+.\scripts\evaluate-rag.ps1           # measured retrieval table
+```
+
+Clean-machine catalog-only fallback (no dense models):
+
+```powershell
+.\scripts\setup.ps1 -CatalogOnly
 ```
 
 ## AI modes
@@ -95,6 +107,10 @@ data/       Local SQLite databases (gitignored)
 
 ## Docs
 
+- `docs/TERRA.md` — Terra product surface  
+- `docs/DATA_SOURCES.md` / `docs/DATA_LICENSES.md` — corpus provenance  
+- `docs/EVALUATION_REPORT.md` — measured retrieval numbers  
+- `docs/screenshots/` — Terra desktop/mobile smoke captures  
 - `docs/01-mockup-inventory.md` — mockup → route map  
 - `docs/02-design-system.md` — tokens  
 - `docs/03-implementation-plan.md` — checklist  
@@ -103,3 +119,11 @@ data/       Local SQLite databases (gitignored)
 - `docs/AGENT-HANDOFF.md` — resume status  
 
 Reference images live in **`MOCK-UP/`** (workspace name; master prompt’s `MOCKUP-UI/` refers to the same role).
+
+## Limitations (honest)
+
+- OpenStreetMap Overpass did not yield POIs in this snapshot (0 OSM ids).  
+- Nongriat, Dooars, and Mawlynnong have unknown page coordinates.  
+- Visual search and live weather/routing stay unavailable offline.  
+- Cost bands are editorial planning envelopes, not quotes.  
+- Live OpenAI is optional and off unless you configure a key.

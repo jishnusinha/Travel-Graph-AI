@@ -118,5 +118,185 @@
     "query": "palace city in Karnataka",
     "expected_slug": "mysuru",
     "notes": "Reviewed: Mysuru/Mysore palace city."
+  },
+  {
+    "id": "munnar-tea-kerala",
+    "query": "Munnar tea estates in Idukki Kerala",
+    "expected_slug": "munnar",
+    "notes": "Reviewed: Munnar is the Kerala tea-hill destination."
+  },
+  {
+    "id": "pelling-kanchenjunga",
+    "query": "Pelling Kanchenjunga views West Sikkim",
+    "expected_slug": "pelling",
+    "notes": "Reviewed: Pelling is known for Kanchenjunga views."
+  },
+  {
+    "id": "ziro-valley",
+    "query": "Apatani valley festival town in Arunachal",
+    "expected_slug": "ziro",
+    "notes": "Reviewed: Ziro / Apatani valley entry."
+  },
+  {
+    "id": "mawlynnong-clean-village",
+    "query": "Asia cleanest village living root Meghalaya",
+    "expected_slug": "mawlynnong",
+    "notes": "Reviewed: Mawlynnong is marketed as a clean village destination."
+  },
+  {
+    "id": "jowai-jaintia",
+    "query": "Jaintia Hills district headquarters Meghalaya",
+    "expected_slug": "jowai",
+    "notes": "Reviewed: Jowai is the Jaintia Hills headquarters."
+  },
+  {
+    "id": "tura-garo-hills",
+    "query": "Garo Hills town Tura Meghalaya",
+    "expected_slug": "tura",
+    "notes": "Reviewed: Tura is the Garo Hills town in the registry."
+  },
+  {
+    "id": "ravangla-buddha-park",
+    "query": "Buddha Park hill town in South Sikkim",
+    "expected_slug": "ravangla",
+    "notes": "Reviewed: Ravangla / Buddha Park association."
+  },
+  {
+    "id": "namchi-south-sikkim",
+    "query": "South Sikkim district headquarters Char Dham",
+    "expected_slug": "namchi",
+    "notes": "Reviewed: Namchi is the South Sikkim HQ destination."
+  },
+  {
+    "id": "yuksom-first-capital",
+    "query": "first capital of Sikkim Yuksom coronation",
+    "expected_slug": "yuksom",
+    "notes": "Reviewed: Yuksom first-capital / Norbugang theme."
+  },
+  {
+    "id": "lachung-north-sikkim",
+    "query": "Lachung valley North Sikkim Yumthang",
+    "expected_slug": "lachung",
+    "notes": "Reviewed: Lachung as gateway to Yumthang."
+  },
+  {
+    "id": "lachen-north-sikkim",
+    "query": "Lachen village toward Gurudongmar Lake",
+    "expected_slug": "lachen",
+    "notes": "Reviewed: Lachen as North Sikkim village toward Gurudongmar."
+  },
+  {
+    "id": "zuluk-silk-route",
+    "query": "Silk Route village Zuluk or Dzuluk Sikkim",
+    "expected_slug": "zuluk",
+    "notes": "Reviewed: Zuluk/Dzuluk Silk Route settlement."
+  },
+  {
+    "id": "kalimpong-hills",
+    "query": "Kalimpong hill town near Teesta",
+    "expected_slug": "kalimpong",
+    "notes": "Reviewed: Kalimpong hill town entry."
+  },
+  {
+    "id": "kurseong-tea",
+    "query": "Kurseong on the Darjeeling Himalayan Railway",
+    "expected_slug": "kurseong",
+    "notes": "Reviewed: Kurseong tea town / DH Railway."
+  },
+  {
+    "id": "mirik-lake",
+    "query": "Mirik lake hill station West Bengal",
+    "expected_slug": "mirik",
+    "notes": "Reviewed: Mirik lake destination."
+  },
+  {
+    "id": "lava-kalimpong",
+    "query": "Lava West Bengal near Neora Valley National Park",
+    "expected_slug": "lava",
+    "notes": "Reviewed: Lava, West Bengal town near Kalimpong / Neora."
+  },
+  {
+    "id": "lolegaon-canopy",
+    "query": "Lolegaon or Loleygaon canopy walk West Bengal",
+    "expected_slug": "lolegaon",
+    "notes": "Reviewed: Lolegaon / Loleygaon village entry."
+  },
+  {
+    "id": "dooars-foothills",
+    "query": "Dooars Duars foothills wildlife North Bengal",
+    "expected_slug": "dooars",
+    "notes": "Reviewed: Dooars alluvial foothills region."
+  },
+  {
+    "id": "bomdila-west-kameng",
+    "query": "Bomdila West Kameng mountainside town",
+    "expected_slug": "bomdila",
+    "notes": "Reviewed: Bomdila West Kameng headquarters."
+  },
+  {
+    "id": "dirang-valley",
+    "query": "Dirang West Kameng valley town on the Tawang road",
+    "expected_slug": "dirang",
+    "notes": "Reviewed: Dirang valley town on the Tawang road."
+  },
+  {
+    "id": "itanagar-capital",
+    "query": "capital of Arunachal Pradesh Itanagar",
+    "expected_slug": "itanagar",
+    "notes": "Reviewed: Itanagar state capital."
+  },
+  {
+    "id": "pasighat-siang",
+    "query": "Pasighat East Siang river town Arunachal",
+    "expected_slug": "pasighat",
+    "notes": "Reviewed: Pasighat East Siang town."
+  },
+  {
+    "id": "mechuka-valley",
+    "query": "Mechuka valley West Siang Arunachal",
+    "expected_slug": "mechuka",
+    "notes": "Reviewed: Mechuka valley destination."
+  },
+  {
+    "id": "guwahati-assam-gateway",
+    "query": "largest city in Assam Kamakhya Guwahati",
+    "expected_slug": "guwahati",
+    "notes": "Reviewed: Guwahati as Assam's largest city / Kamakhya."
+  },
+  {
+    "id": "majuli-island",
+    "query": "Majuli river island satras Assam",
+    "expected_slug": "majuli",
+    "notes": "Reviewed: Majuli island destination."
+  },
+  {
+    "id": "sivasagar-ahom",
+    "query": "Sivasagar Ahom tanks and temples Assam",
+    "expected_slug": "sivasagar",
+    "notes": "Reviewed: Sivasagar Ahom heritage city."
+  },
+  {
+    "id": "tezpur-assam",
+    "query": "Tezpur cultural town on the Brahmaputra",
+    "expected_slug": "tezpur",
+    "notes": "Reviewed: Tezpur Assam town."
+  },
+  {
+    "id": "kohima-nagaland-capital",
+    "query": "capital of Nagaland Kohima war cemetery",
+    "expected_slug": "kohima",
+    "notes": "Reviewed: Kohima state capital."
+  },
+  {
+    "id": "dimapur-nagaland-gateway",
+    "query": "largest city of Nagaland Dimapur airport gateway",
+    "expected_slug": "dimapur",
+    "notes": "Reviewed: Dimapur as Nagaland's largest city."
+  },
+  {
+    "id": "mokokchung-ao-naga",
+    "query": "Mokokchung Ao Naga cultural town",
+    "expected_slug": "mokokchung",
+    "notes": "Reviewed: Mokokchung Ao cultural center."
   }
 ]

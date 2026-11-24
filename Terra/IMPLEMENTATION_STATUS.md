@@ -38,7 +38,7 @@ This is two reviewed cases, not a 50-case comparison. Hybrid ranked Sohra first 
 
 RAG plans no longer copy the first retrieved citation onto an unrelated sight. A cited activity title has to occur in that citation's excerpt. OpenAI mode validates structured claims and retries once; rejected output keeps `generation_mode=deterministic_evidence` and `generation_warnings=["openai_output_rejected"]`. Accepted output is `openai_grounded` and does not replace the activity list or invent prices. `AI_MODE` is `demo` here and no API key is configured, so no live OpenAI call was made.
 
-The source-completion work is in the next section. Terra Playwright screenshots were captured at 1440×900 and 390×844 under `docs/screenshots/terra-*.png`. The reviewed retrieval set is 20 cases, not 50.
+The source-completion work is in the next section. Terra Playwright screenshots were captured at 1440×900 and 390×844 under `docs/screenshots/terra-*.png`. The reviewed retrieval set is **50** cases.
 
 ## Source completion (2026-11-24)
 
@@ -81,17 +81,17 @@ Frontend: `npm run typecheck` passed. `npm test` **27 passed**. MapLibre `5.6.0`
 
 `/intelligence/knowledge` now shows corpus inventory (including entity/relationship counts and document license coverage), destination seed selection, hop/predicate filters, entity search, a React Flow bounded subgraph, node/edge inspector with chunk excerpts when present, and an accessible edge list. `GET /knowledge/entities` supports label search. Destination graph walks 1–2 hops with optional predicate filter. `within_80km_straight_line` remains labeled as haversine, not a road.
 
-`data/knowledge/manifests/eval_cases.json` has **20 reviewed cases** for `india-v1` (not 50). Measured hit@3 on this machine, same process, all 20 present in the snapshot:
+`data/knowledge/manifests/eval_cases.json` has **50 reviewed cases** for `india-v1`. Measured hit@3 on this machine, same process, all 50 present in the snapshot. Full table: `docs/EVALUATION_REPORT.md`.
 
-| Strategy | hit@3 | hits/n | Misses |
-|---|---|---|---|
-| keyword | 0.9 | 18/20 | waterfalls-hills, dawki-river |
-| dense | 0.85 | 17/20 | sikkim-capital, living-root-bridges, dawki-river |
-| hybrid | 0.9 | 18/20 | sikkim-capital, dawki-river |
-| hybrid_rerank | 1.0 | 20/20 | none |
-| graph_hybrid | 0.8 | 16/20 | waterfalls-hills, sikkim-capital, living-root-bridges, dawki-river |
+| Strategy | hit@3 | hits/n |
+|---|---|---|
+| keyword | 0.92 | 46/50 |
+| dense | 0.90 | 45/50 |
+| hybrid | 0.92 | 46/50 |
+| hybrid_rerank | **0.96** | 48/50 |
+| graph_hybrid | 0.88 | 44/50 |
 
-Graph-hybrid did **not** beat hybrid or hybrid_rerank on this set. Snapshot graph size at measurement: **348 entities**, **442 relationships**. Playwright Terra specs under `frontend/e2e/terra-screenshots.spec.ts` passed against a live API+Vite pair. Captured: `terra-landing-desktop.png`, `terra-explore-desktop.png`, `terra-destination-desktop.png`, `terra-map-desktop.png`, `terra-knowledge-desktop.png`, `terra-landing-mobile.png`, `terra-explore-mobile.png`.
+Graph-hybrid did **not** beat hybrid or hybrid_rerank. Snapshot graph size: **348 entities**, **442 relationships**. `scripts/doctor.ps1` reports the offline demo ready. Playwright Terra specs passed; screenshots under `docs/screenshots/terra-*.png`.
 
 ## Baseline
 
@@ -115,17 +115,17 @@ Graph-hybrid did **not** beat hybrid or hybrid_rerank on this set. Snapshot grap
 | T05 | Done for current API | Discovery, detail, compare, save, ask, stats. Auth tests in `test_terra_api.py` use the synthetic fixture | — |
 | T06 | Done for offline evidence; OpenAI path tested with a fake provider | Catalog Goa path unchanged. RAG demo plans stay `deterministic_evidence` with cost provenance `local_retrieval_no_llm`. Cited activities must match their excerpt. Rejected model JSON keeps the deterministic plan. A validated fake response becomes `openai_grounded` without adding places | No live OpenAI call: `AI_MODE=demo` and no key is configured |
 | T07 | Partial | Retrieval runs and hits are stored. RAG tool rows use `knowledge.retrieve` and `local-retrieval`. Existing SSE/replay still serve agent events | Retrieval playground is a page, not a pixel-verified studio |
-| T08 | Partial | Landing hero with real Commons photo, Explore cards with evidence, destination cinematic detail, dashboard curated strip, compare tray. Typecheck passed | Playwright desktop/mobile screenshot pass not run in this session |
-| T09 | Partial | 20 reviewed cases measured for five strategies. hybrid_rerank hit@3 1.0; keyword/hybrid 0.9; dense 0.85; graph_hybrid 0.8 | Not 50 cases. Graph did not improve this set |
+| T08 | Partial | Landing hero with real Commons photo, Explore cards with evidence, destination cinematic detail, dashboard curated strip, compare tray. Typecheck passed | Broader dark-studio visual QA still optional |
+| T09 | Done for the 50-case file | 50 reviewed cases, five strategies. hybrid_rerank hit@3 0.96; keyword/hybrid 0.92; dense 0.90; graph_hybrid 0.88 | Graph did not improve this set. See EVALUATION_REPORT.md |
 | T10 | Partial | All 50 registry places are in `india-v1`. The 8 places without Wikivoyage now use their Wikipedia lead. Seven of those eight have Wikipedia page coordinates. Nongriat does not. 48 images. 284 attractions after name-key collapse | Lolegaon and Mawsynram have no Wikipedia page image. OSM contributed no coordinates |
 | T11 | Partial | MapLibre offline style with local India outline GeoJSON, stored pins, list sync, missing-coord warning, attribution | No PMTiles pack. Not a road map. No OSRM |
 | T12 | Partial | RAG still refuses to invent prices. Each of the 50 destinations has five `editorial_planning_band` rows, confidence `low`. Intercity transport and road distance are not stored | No OSRM or Open-Meteo calls. The bands are not quotes |
-| T13 | Partial | `POST /trips/{id}/replan-day` keeps other days and returns 409 on a stale version. `POST /trips/{id}/activities/reorder` swaps a neighbor and stores a new version. Trip detail has print, up/down, and replan-this-day. `tests/test_trip_edits.py` passed | Drag-and-drop and a dedicated print stylesheet were not added |
+| T13 | Partial | Day replan, reorder, version conflict 409, print button, and a print stylesheet that hides chrome. `tests/test_trip_edits.py` passed | Drag-and-drop was not added |
 | T14 | Partial | `located_in` and `within_80km_straight_line` edges with method labels. Bounded BFS helper tested. india-v1: 348 entities, 442 relationships | Edges are rule/haversine based, not a full curated ontology |
 | T15 | Partial | Knowledge Explorer: inventory, entity search, React Flow subgraph, inspector with excerpts, list fallback | Multi-hop held-out graph questions beyond the 20-case table are not separate |
 | T16 | Partial | `POST /discovery/visual` returns 503. Personalization requires explicit consent and was API-tested | No image model |
-| T17 | Partial | 20 reviewed cases, five strategies. hybrid_rerank 1.0; keyword/hybrid 0.9; dense 0.85; graph_hybrid 0.8. See the knowledge-explorer section | Still not 50 cases. Graph_hybrid is worse here |
-| T18 | Partial | Docs updated. Terra Playwright desktop+mobile smoke passed; 7 `docs/screenshots/terra-*.png` artifacts written | Full dark-studio visual QA and production clean-machine setup still open |
+| T17 | Done for offline retrieval comparison | 50 reviewed cases. hybrid_rerank 0.96 best; graph_hybrid 0.88. Report in `docs/EVALUATION_REPORT.md` | Graph_hybrid is worse here. No live judge |
+| T18 | Partial | `doctor.ps1`, README clean-machine path, Terra screenshots, evaluation report | Optional live OpenAI and production hardening still open |
 
 ## Measured retrieval on `india-v1`
 
@@ -166,4 +166,4 @@ Sohra attractions now stored from text that occurs in the Cherrapunji extract, c
 
 ## Latest checkpoint
 
-Critical corrections, source completion, Terra UI/map, Knowledge Explorer, a 20-case strategy table, and Terra screenshots are in the working tree and are not committed. Working branch is currently `master` with local modifications. Backend pytest: **112 passed**. `india-v1` has 92 documents, 581 chunks, 48 images, 348 entities, and 442 relationships. hybrid_rerank hit@3 is 1.0 on the 20 reviewed cases; graph_hybrid is 0.8 and is not an improvement. Remaining gaps: expand reviewed cases toward 50 if needed, production clean-machine setup, and optional live OpenAI only when a key exists.
+Critical corrections through the 50-case evaluation and clean-machine doctor script are in the working tree and are not committed (`master` with local modifications). Backend pytest: **112 passed**. `doctor.ps1` reports the offline demo ready. hybrid_rerank hit@3 on 50 cases is **0.96**; graph_hybrid is **0.88**. Remaining gaps: optional live OpenAI when a key exists, visual search model, OSM/Overpass POIs if the public API recovers, and production hardening beyond the local demo.

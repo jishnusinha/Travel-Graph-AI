@@ -376,3 +376,28 @@
     animation: none;
   }
 }
+
+@media print {
+  nav,
+  aside,
+  .fixed,
+  [aria-label="Mobile"],
+  button,
+  .tg-btn {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  main,
+  .terra-scope {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+}
