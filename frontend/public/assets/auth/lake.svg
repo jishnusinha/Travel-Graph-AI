@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Calm lake">
+<defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c7d2fe"/><stop offset="1" stop-color="#a7f3d0"/></linearGradient></defs>
+<rect width="800" height="500" fill="url(#s)"/><polygon points="0 300 60 225 150 280 260 145 350 280 470 205 560 280 680 155 770 280 800 300 800 500 0 500" fill="#a5b4fc"/><polygon points="0 300 100 275 190 290 290 205 380 290 450 245 540 290 640 210 730 290 800 300 800 500 0 500" fill="#6366f1"/><path d="M0 320 H800 V500 H0Z" fill="#0f766e"/>
+</svg>

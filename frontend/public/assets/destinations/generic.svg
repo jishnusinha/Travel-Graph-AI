@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Travel destination">
+<defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c7d2fe"/><stop offset="0.6" stop-color="#a5f3fc"/><stop offset="1" stop-color="#bbf7d0"/></linearGradient></defs>
+<rect width="800" height="500" fill="url(#s)"/><circle cx="600" cy="160" r="92.4" fill="#fff" opacity=".18"/><circle cx="600" cy="160" r="42" fill="#fff" opacity=".9"/><path d="M0 300 Q200 240 400 300 T800 300 V500 H0Z" fill="#818cf8"/><path d="M0 340 Q200 260 400 340 T800 340 V500 H0Z" fill="#6366f1"/><path d="M0 380 Q200 280 400 380 T800 380 V500 H0Z" fill="#4f46e5"/>
+</svg>

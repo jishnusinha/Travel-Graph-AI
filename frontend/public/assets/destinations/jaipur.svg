@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Jaipur heritage">
+<defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fed7aa"/><stop offset="1" stop-color="#fecdd3"/></linearGradient></defs>
+<rect width="800" height="500" fill="url(#s)"/><circle cx="400" cy="170" r="114.4" fill="#fde68a" opacity=".18"/><circle cx="400" cy="170" r="52" fill="#fde68a" opacity=".9"/><path d="M40 420 V300 Q75 240 110 300 V420Z" fill="#fb7185"/><path d="M150 420 V260 Q185 200 220 260 V420Z" fill="#fb7185"/><path d="M260 420 V220 Q295 160 330 220 V420Z" fill="#fb7185"/><path d="M370 420 V300 Q405 240 440 300 V420Z" fill="#fb7185"/><path d="M480 420 V260 Q515 200 550 260 V420Z" fill="#fb7185"/><path d="M590 420 V220 Q625 160 660 220 V420Z" fill="#fb7185"/><path d="M700 420 V300 Q735 240 770 300 V420Z" fill="#fb7185"/><rect y="420" width="800" height="80" fill="#be123c"/>
+</svg>

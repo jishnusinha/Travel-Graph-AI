@@ -1,0 +1,296 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------
+   TravelGraph AI design tokens — Dual Experience
+   Light = Travel Workspace (default). Dark = Intelligence Workspace
+   (applied via the `.theme-dark` class by <AppShell/> on studio routes).
+   ------------------------------------------------------------------ */
+:root {
+  --tg-canvas: #f5f7fb;
+  --tg-canvas-wash: #eef0fb;
+  --tg-surface: #ffffff;
+  --tg-surface-2: #f8f9fd;
+  --tg-ink: #0f172a;
+  --tg-muted: #64748b;
+  --tg-line: #e2e8f0;
+  --tg-primary: #6366f1;
+  --tg-primary-strong: #4f46e5;
+  --tg-primary-soft: #eef0ff;
+  --tg-primary-ink: #4338ca;
+  --tg-mint: #10b981;
+  --tg-mint-soft: #e6f8f1;
+  --tg-warn: #f59e0b;
+  --tg-warn-soft: #fff5de;
+  --tg-danger: #ef4444;
+  --tg-danger-soft: #fdecec;
+  --tg-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --tg-ring: rgba(99, 102, 241, 0.35);
+  --tg-grid-dot: rgba(99, 102, 241, 0.12);
+  color-scheme: light;
+}
+
+.theme-dark {
+  --tg-canvas: #0b0e17;
+  --tg-canvas-wash: #0e1220;
+  --tg-surface: #141827;
+  --tg-surface-2: #1a1f33;
+  --tg-ink: #e8ecf8;
+  --tg-muted: #94a3b8;
+  --tg-line: rgba(129, 140, 248, 0.22);
+  --tg-primary: #818cf8;
+  --tg-primary-strong: #6366f1;
+  --tg-primary-soft: rgba(99, 102, 241, 0.16);
+  --tg-primary-ink: #c7d2fe;
+  --tg-mint: #34d399;
+  --tg-mint-soft: rgba(52, 211, 153, 0.12);
+  --tg-warn: #fbbf24;
+  --tg-warn-soft: rgba(251, 191, 36, 0.12);
+  --tg-danger: #f87171;
+  --tg-danger-soft: rgba(248, 113, 113, 0.12);
+  --tg-shadow: 0 0 0 1px rgba(129, 140, 248, 0.35), 0 0 24px rgba(99, 102, 241, 0.15);
+  --tg-ring: rgba(129, 140, 248, 0.5);
+  --tg-grid-dot: rgba(129, 140, 248, 0.14);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-canvas: var(--tg-canvas);
+  --color-wash: var(--tg-canvas-wash);
+  --color-surface: var(--tg-surface);
+  --color-surface-2: var(--tg-surface-2);
+  --color-ink: var(--tg-ink);
+  --color-muted: var(--tg-muted);
+  --color-line: var(--tg-line);
+  --color-primary: var(--tg-primary);
+  --color-primary-strong: var(--tg-primary-strong);
+  --color-primary-soft: var(--tg-primary-soft);
+  --color-primary-ink: var(--tg-primary-ink);
+  --color-mint: var(--tg-mint);
+  --color-mint-soft: var(--tg-mint-soft);
+  --color-warn: var(--tg-warn);
+  --color-warn-soft: var(--tg-warn-soft);
+  --color-danger: var(--tg-danger);
+  --color-danger-soft: var(--tg-danger-soft);
+
+  --radius-card: 16px;
+  --radius-input: 12px;
+  --shadow-soft: var(--tg-shadow);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    background: var(--tg-canvas);
+    color: var(--tg-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  :focus-visible {
+    outline: 2px solid var(--tg-primary);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--tg-ring);
+  }
+}
+
+@layer components {
+  .tg-card {
+    background: var(--tg-surface);
+    border: 1px solid var(--tg-line);
+    border-radius: 16px;
+    box-shadow: var(--tg-shadow);
+  }
+  .theme-dark .tg-card {
+    background: linear-gradient(160deg, rgba(26, 31, 51, 0.92), rgba(20, 24, 39, 0.92));
+    box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.12), 0 0 24px rgba(99, 102, 241, 0.08);
+  }
+  .tg-input {
+    width: 100%;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid var(--tg-line);
+    background: var(--tg-surface);
+    color: var(--tg-ink);
+    padding: 0 14px;
+    font-size: 14px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .tg-input::placeholder {
+    color: var(--tg-muted);
+    opacity: 0.8;
+  }
+  .tg-input:focus {
+    outline: none;
+    border-color: var(--tg-primary);
+    box-shadow: 0 0 0 3px var(--tg-ring);
+  }
+  .tg-input[aria-invalid='true'] {
+    border-color: var(--tg-danger);
+  }
+  textarea.tg-input {
+    height: auto;
+    padding: 12px 14px;
+    resize: vertical;
+  }
+  .tg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 18px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    border: 1px solid transparent;
+    transition: transform 0.12s, box-shadow 0.15s, background 0.15s, opacity 0.15s;
+    white-space: nowrap;
+  }
+  .tg-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .tg-btn:disabled {
+    opacity: 0.55;
+  }
+  .tg-btn-primary {
+    background: linear-gradient(180deg, #6366f1, #4f46e5);
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
+  }
+  .tg-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(180deg, #7578f3, #5b52ea);
+  }
+  .tg-btn-secondary {
+    background: var(--tg-surface);
+    color: var(--tg-ink);
+    border-color: var(--tg-line);
+  }
+  .tg-btn-secondary:hover:not(:disabled) {
+    background: var(--tg-surface-2);
+  }
+  .tg-btn-ghost {
+    background: transparent;
+    color: var(--tg-muted);
+  }
+  .tg-btn-ghost:hover:not(:disabled) {
+    background: var(--tg-primary-soft);
+    color: var(--tg-primary-ink);
+  }
+  .tg-btn-danger {
+    background: var(--tg-danger-soft);
+    color: var(--tg-danger);
+    border-color: color-mix(in srgb, var(--tg-danger) 35%, transparent);
+  }
+  .tg-btn-sm {
+    height: 34px;
+    padding: 0 12px;
+    font-size: 13px;
+    border-radius: 10px;
+  }
+  .tg-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .tg-error-text {
+    color: var(--tg-danger);
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  .tg-mono {
+    font-family: var(--font-mono);
+  }
+  .tg-dotgrid {
+    background-image: radial-gradient(var(--tg-grid-dot) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .tg-skeleton {
+    background: linear-gradient(90deg, var(--tg-line) 25%, var(--tg-surface-2) 50%, var(--tg-line) 75%);
+    background-size: 200% 100%;
+    animation: tg-shimmer 1.4s infinite linear;
+    border-radius: 10px;
+  }
+}
+
+@keyframes tg-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes tg-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(129, 140, 248, 0);
+  }
+}
+@keyframes tg-dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.tg-node-running {
+  animation: tg-pulse-ring 1.6s infinite;
+}
+
+/* React Flow theming — follows tokens */
+.react-flow {
+  --xy-background-color: transparent;
+  --xy-edge-stroke-default: color-mix(in srgb, var(--tg-primary) 60%, transparent);
+  --xy-controls-button-background-color-default: var(--tg-surface);
+  --xy-controls-button-color-default: var(--tg-ink);
+  --xy-controls-button-border-color-default: var(--tg-line);
+  --xy-minimap-background-color-default: var(--tg-surface);
+}
+.react-flow__attribution {
+  display: none;
+}
+.react-flow__edge.tg-edge-active .react-flow__edge-path {
+  stroke: var(--tg-primary);
+  stroke-dasharray: 6 6;
+  animation: tg-dash 0.8s linear infinite;
+}
+
+[data-reduce-motion='true'] *,
+[data-reduce-motion='true'] *::before,
+[data-reduce-motion='true'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
