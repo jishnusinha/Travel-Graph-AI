@@ -93,6 +93,11 @@ async def execute_run(db: AsyncSession, run_id: str) -> AgentRun:
     seq = SeqCounter()
     run.status = "running"
     run.started_at = utcnow()
+    run.knowledge_mode = settings.knowledge_mode
+    if settings.knowledge_mode == "rag":
+        run.generation_provenance = "deterministic_evidence" if settings.is_demo else "openai_retrieval"
+        run.model_name = "deterministic-evidence" if settings.is_demo else (settings.openai_model or "openai")
+        run.cost_provenance = "local_retrieval_no_llm" if settings.is_demo else "estimated"
     await db.commit()
 
     await _emit(db, run.id, seq, type="run.created", status="pending", payload={"public_id": run.public_id})
@@ -117,6 +122,7 @@ async def execute_run(db: AsyncSession, run_id: str) -> AgentRun:
     attempts: dict[str, int] = {}
     final_state: dict[str, Any] = dict(initial)
     demo = settings.ai_mode == "demo"
+    catalog_demo = demo and settings.knowledge_mode != "rag"
     acc = {"tin": 0, "tout": 0, "model": 0.0, "tool": 0.0}
     try:
         async for mode, event in graph.astream(initial, stream_mode=["tasks", "updates", "values"]):
@@ -154,7 +160,17 @@ async def execute_run(db: AsyncSession, run_id: str) -> AgentRun:
 
                 if node_id in NODE_TOOLS:
                     tool_name = NODE_TOOLS[node_id]
-                    fee = role_tool_cost(node_id) if demo else 0.0
+                    fee = role_tool_cost(node_id) if catalog_demo else 0.0
+                    provenance = "local-catalog"
+                    tool_duration = 120
+                    if settings.knowledge_mode == "rag":
+                        tool_name = "knowledge.retrieve"
+                        provenance = "local-retrieval"
+                        measured = 0
+                        for payload in (update.get("tool_results") or {}).values():
+                            if isinstance(payload, dict) and payload.get("duration_ms") is not None:
+                                measured = int(float(payload["duration_ms"]))
+                        tool_duration = max(measured, 1)
                     await _emit(
                         db,
                         run.id,
@@ -170,9 +186,9 @@ async def execute_run(db: AsyncSession, run_id: str) -> AgentRun:
                             node_id=node_id,
                             tool_name=tool_name,
                             status="succeeded",
-                            duration_ms=120,
+                            duration_ms=tool_duration,
                             fee_usd=fee,
-                            provenance="local-catalog",
+                            provenance=provenance,
                             output_summary={"ok": True},
                         )
                     )
@@ -185,7 +201,7 @@ async def execute_run(db: AsyncSession, run_id: str) -> AgentRun:
                         status="succeeded",
                         payload={"tool": tool_name, "fee_usd": fee},
                     )
-                    if demo and fee > 0:
+                    if catalog_demo and fee > 0:
                         acc["tool"] += fee
                         db.add(
                             CostLineItem(
@@ -223,7 +239,7 @@ async def execute_run(db: AsyncSession, run_id: str) -> AgentRun:
                 )
 
                 usage: dict[str, Any] = {}
-                if demo and node_id in LIVE_DEMO_ROLE_TOKENS:
+                if catalog_demo and node_id in LIVE_DEMO_ROLE_TOKENS:
                     tin, tout = LIVE_DEMO_ROLE_TOKENS[node_id]
                     model_cost = role_model_cost(node_id)
                     acc["tin"] += tin
@@ -281,6 +297,8 @@ async def execute_run(db: AsyncSession, run_id: str) -> AgentRun:
                 await asyncio.sleep(0.02)
 
         run.final_plan = final_state.get("final_plan") or {}
+        run.snapshot_id = (run.final_plan or {}).get("snapshot_id") or final_state.get("snapshot_id")
+        run.selected_evidence = (run.final_plan or {}).get("citations") or final_state.get("discovery_candidates") or []
         terminal_type = "run.completed"
         if final_state.get("needs_clarification"):
             run.status = "needs_clarification"
@@ -291,19 +309,28 @@ async def execute_run(db: AsyncSession, run_id: str) -> AgentRun:
             run.status = "completed"
             if (run.request_payload or {}).get("persist_trip") is not False:
                 await _persist_trip_from_plan(db, run, final_state)
+                if run.status == "failed":
+                    terminal_type = "run.failed"
 
-        if demo:
+        if catalog_demo:
             run.input_tokens = acc["tin"]
             run.output_tokens = acc["tout"]
             run.model_cost_usd = round(acc["model"], 6)
             run.tool_cost_usd = round(acc["tool"], 6)
             run.total_cost_usd = round(acc["model"] + acc["tool"], 6)
             run.cost_provenance = "demo"
+        elif settings.knowledge_mode == "rag" and demo:
+            run.input_tokens = 0
+            run.output_tokens = 0
+            run.model_cost_usd = 0.0
+            run.tool_cost_usd = 0.0
+            run.total_cost_usd = 0.0
+            run.cost_provenance = "local_retrieval_no_llm"
 
         run.completed_at = utcnow()
         if run.started_at:
             run.wall_time_ms = int((run.completed_at - run.started_at).total_seconds() * 1000)
-        if run.wall_time_ms <= 0 and demo:
+        if run.wall_time_ms <= 0 and catalog_demo:
             run.wall_time_ms = DEMO_WALL_TIME_MS
         payload: dict[str, Any] = {"wall_time_ms": run.wall_time_ms}
         if terminal_type == "run.needs_clarification":
@@ -379,6 +406,26 @@ async def _finish_trip(db: AsyncSession, run: AgentRun, *, status: str) -> None:
         trip.status = status
 
 
+def _scope_replan_day(plan: dict[str, Any], payload: dict[str, Any], trip: Trip) -> dict[str, Any] | None:
+    """Keep every day except the one the user asked to regenerate."""
+    day_no = payload.get("replan_day")
+    prior = payload.get("prior_days")
+    if not day_no or not prior:
+        return plan
+    expected = payload.get("expected_version")
+    if expected is not None and trip.current_version != int(expected):
+        return None
+    fresh = {int(day.get("day_number") or 0): day for day in plan.get("days") or []}
+    if int(day_no) not in fresh:
+        return None
+    merged = dict(plan)
+    merged["days"] = [
+        fresh[int(day_no)] if int(day.get("day_number") or 0) == int(day_no) else day
+        for day in prior
+    ]
+    return merged
+
+
 async def _persist_trip_from_plan(db: AsyncSession, run: AgentRun, state: dict[str, Any]) -> None:
     plan = state.get("final_plan") or {}
     if not plan:
@@ -391,8 +438,17 @@ async def _persist_trip_from_plan(db: AsyncSession, run: AgentRun, state: dict[s
         db.add(trip)
         await db.flush()
         run.trip_id = trip.id
+    payload = run.request_payload or {}
+    scoped = _scope_replan_day(plan, payload, trip)
+    if scoped is None:
+        run.status = "failed"
+        run.error_message = "The trip version changed before this day could be saved. The previous itinerary was left unchanged."
+        return
+    plan = scoped
     summary = (
-        "Generated by TravelGraph agents"
+        f"Replanned day {payload['replan_day']}"
+        if payload.get("replan_day")
+        else "Generated by TravelGraph agents"
         if run.revision_number <= 1
         else f"Replanned by TravelGraph agents (revision {run.revision_number})"
     )

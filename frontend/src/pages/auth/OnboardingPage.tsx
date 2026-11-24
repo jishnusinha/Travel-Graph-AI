@@ -77,7 +77,8 @@ export default function OnboardingPage() {
       })
       setUser(updated)
       toast.success(skipped ? 'Skipped for now' : 'Preferences saved', 'You can change these anytime in Settings.')
-      navigate('/dashboard', { replace: true })
+      const pending = sessionStorage.getItem('terra.pendingQuery')
+      navigate(pending ? '/explore' : '/dashboard', { replace: true, state: pending ? { query: pending } : undefined })
     } catch (e) {
       toast.error('Could not save preferences', e instanceof ApiError ? e.message : undefined)
     } finally {

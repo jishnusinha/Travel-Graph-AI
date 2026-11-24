@@ -54,8 +54,8 @@
 }
 
 @theme inline {
-  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", ui-monospace, Consolas, monospace;
 
   --color-canvas: var(--tg-canvas);
   --color-wash: var(--tg-canvas-wash);
@@ -294,3 +294,22 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Terra editorial scope. Inherits into children; does not replace the dark studio. */
+.terra-scope {
+  --tg-canvas: #f6f3eb;
+  --tg-canvas-wash: #efeae0;
+  --tg-surface: #ffffff;
+  --tg-surface-2: #f3efe6;
+  --tg-ink: #222722;
+  --tg-muted: #59665e;
+  --tg-line: #ddd6c8;
+  --tg-primary: #243e36;
+  --tg-primary-strong: #1b302a;
+  --tg-primary-soft: #e7efe9;
+  --tg-primary-ink: #243e36;
+  --tg-ring: rgba(36, 62, 54, 0.35);
+  color: var(--tg-ink);
+  background: var(--tg-canvas);
+}
+.terra-serif { font-family: "Palatino Linotype", Palatino, Georgia, serif; }

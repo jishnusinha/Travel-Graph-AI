@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import Field
 
@@ -20,6 +20,7 @@ class TripCreateIn(APIModel):
     interests: list[str] = Field(default_factory=list)
     mode: str = "simple"
     launch_run: bool = True
+    destination_id: Optional[str] = None
 
 
 class TripUpdateIn(APIModel):
@@ -46,6 +47,15 @@ class TripActivityOut(APIModel):
     image: str
     estimated_cost_inr: int
     sort_order: int
+    attraction_id: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    duration_minutes: Optional[int] = None
+    citation_ids: list[Any] = Field(default_factory=list)
+    verification_status: str = "catalog"
+    cost_low_inr: Optional[int] = None
+    cost_high_inr: Optional[int] = None
+    cost_basis: Optional[str] = None
 
 
 class TripDayOut(APIModel):
@@ -122,6 +132,18 @@ class TripListItem(APIModel):
 class ReplanIn(APIModel):
     prompt: Optional[str] = None
     preferences: dict[str, Any] = Field(default_factory=dict)
+
+
+class ReplanDayIn(APIModel):
+    day_number: int = Field(ge=1, le=30)
+    expected_version: int = Field(ge=1)
+    prompt: Optional[str] = None
+
+
+class ActivityReorderIn(APIModel):
+    activity_id: str
+    expected_version: int = Field(ge=1)
+    direction: Literal["up", "down"]
 
 
 class FavoriteIn(APIModel):

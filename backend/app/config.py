@@ -20,6 +20,22 @@ class Settings(BaseSettings):
 
     app_env: Literal["local", "test", "production"] = "local"
     ai_mode: Literal["demo", "openai"] = "demo"
+    # catalog preserves the legacy fixture planner. rag uses the local corpus.
+    # Default stays catalog when the variable is absent so existing databases keep working.
+    knowledge_mode: Literal["catalog", "rag"] = "catalog"
+    knowledge_snapshot: str = ""
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_model_revision: str = ""
+    rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    rerank_model_revision: str = ""
+    retrieval_strategy: str = "hybrid_rerank"
+    retrieval_top_k: int = 30
+    rerank_top_k: int = 8
+    graph_max_hops: int = 2
+    allow_network_tools: bool = False
+    allow_model_download: bool = False
+    map_mode: Literal["offline", "online"] = "offline"
+    http_user_agent: str = "TerraTravelGraph/1.0 (https://github.com/jishnusinha/Travel-Graph-AI; local ingest)"
     openai_api_key: str = ""
     openai_model: str = ""
     database_url: str = Field(
@@ -47,6 +63,10 @@ class Settings(BaseSettings):
     @property
     def openai_ready(self) -> bool:
         return bool(self.openai_api_key.strip()) and bool(self.openai_model.strip())
+
+    @property
+    def knowledge_root(self) -> Path:
+        return DATA_DIR / "knowledge"
 
 
 @lru_cache

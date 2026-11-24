@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Link, Route, Routes } from 'react-router-dom'
 import { Compass } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { FullScreenLoader, ProtectedRoute, PublicOnlyRoute } from '@/components/routing/ProtectedRoute'
@@ -21,6 +21,14 @@ const EvaluationsPage = lazy(() => import('@/pages/evaluations/EvaluationsPage')
 const ComparePage = lazy(() => import('@/pages/evaluations/ComparePage'))
 const CostsPage = lazy(() => import('@/pages/costs/CostsPage'))
 const RunCostPage = lazy(() => import('@/pages/costs/RunCostPage'))
+const LandingPage = lazy(() => import('@/pages/terra/LandingPage'))
+const ExplorePage = lazy(() => import('@/pages/terra/ExplorePage'))
+const MapPage = lazy(() => import('@/pages/terra/MapPage'))
+const ComparePlacesPage = lazy(() => import('@/pages/terra/ComparePage'))
+const DestinationPage = lazy(() => import('@/pages/terra/DestinationPage'))
+const SavedPage = lazy(() => import('@/pages/terra/SavedPage'))
+const RetrievalPage = lazy(() => import('@/pages/intelligence/RetrievalPage'))
+const KnowledgePage = lazy(() => import('@/pages/intelligence/KnowledgePage'))
 
 function NotFound() {
   return (
@@ -57,6 +65,13 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppShell />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/explore" element={<ExplorePage />} />
+              <Route path="/explore/map" element={<MapPage />} />
+              <Route path="/explore/compare" element={<ComparePlacesPage />} />
+              <Route path="/destinations/:slug" element={<DestinationPage />} />
+              <Route path="/saved" element={<SavedPage />} />
+              <Route path="/intelligence/retrieval" element={<RetrievalPage />} />
+              <Route path="/intelligence/knowledge" element={<KnowledgePage />} />
               <Route path="/trips/new" element={<NewTripPage />} />
               <Route path="/trips" element={<TripsPage />} />
               <Route path="/trips/:tripId" element={<TripDetailPage />} />
@@ -74,7 +89,7 @@ export default function App() {
             </Route>
           </Route>
 
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<LandingPage />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

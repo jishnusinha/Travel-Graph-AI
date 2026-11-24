@@ -4,6 +4,7 @@ import re
 from datetime import date, datetime, timedelta
 from typing import Any
 
+from app.config import get_settings
 from app.graph.state import TravelGraphState
 from app.providers.catalog import catalog_provider
 from app.providers.llm import get_llm_provider
@@ -63,6 +64,10 @@ def _day_count(start: str | None, end: str | None, prompt: str) -> int:
 
 
 async def supervisor_node(state: TravelGraphState) -> dict[str, Any]:
+    if get_settings().knowledge_mode == "rag":
+        from app.services.planner_knowledge import rag_supervisor
+
+        return rag_supervisor(state)
     req = state.get("trip_request") or {}
     prompt = req.get("prompt") or ""
     destination = _parse_destination(prompt, req.get("destination"))
@@ -157,6 +162,10 @@ async def supervisor_node(state: TravelGraphState) -> dict[str, Any]:
 
 
 async def destination_research_node(state: TravelGraphState) -> dict[str, Any]:
+    if get_settings().knowledge_mode == "rag":
+        from app.services.planner_knowledge import rag_research
+
+        return rag_research(state)
     norm = state.get("normalized_request") or {}
     dest = catalog_provider.lookup_destination(norm.get("destination", "Goa"))
     llm = get_llm_provider()
@@ -185,6 +194,10 @@ async def destination_research_node(state: TravelGraphState) -> dict[str, Any]:
 
 
 async def transport_node(state: TravelGraphState) -> dict[str, Any]:
+    if get_settings().knowledge_mode == "rag":
+        from app.services.planner_knowledge import rag_transport
+
+        return rag_transport(state)
     norm = state.get("normalized_request") or {}
     dest = catalog_provider.lookup_destination(norm.get("destination", "Goa"))
     options = dest.get("transport") or []
@@ -203,6 +216,10 @@ async def transport_node(state: TravelGraphState) -> dict[str, Any]:
 
 
 async def accommodation_node(state: TravelGraphState) -> dict[str, Any]:
+    if get_settings().knowledge_mode == "rag":
+        from app.services.planner_knowledge import rag_stay
+
+        return rag_stay(state)
     norm = state.get("normalized_request") or {}
     dest = catalog_provider.lookup_destination(norm.get("destination", "Goa"))
     hotels = dest.get("hotels") or []
@@ -345,6 +362,10 @@ def _generic_itinerary(dest_name: str, days: int, attractions: list[dict[str, An
 
 
 async def itinerary_node(state: TravelGraphState) -> dict[str, Any]:
+    if get_settings().knowledge_mode == "rag":
+        from app.services.planner_knowledge import rag_itinerary
+
+        return rag_itinerary(state)
     norm = state.get("normalized_request") or {}
     dest_name = norm.get("destination", "Goa")
     days = int(norm.get("days") or 5)
@@ -418,23 +439,43 @@ async def validator_node(state: TravelGraphState) -> dict[str, Any]:
                     "correctable": True,
                 }
             )
-    total = int(budget.get("total") or 0)
-    if trip_budget and total > trip_budget:
+    if budget.get("verification_status") == "unknown":
         findings.append(
             {
-                "code": "budget_exceeded",
-                "severity": "error",
-                "message": f"Estimated ₹{total} exceeds budget ₹{trip_budget}",
-                "correctable": True,
+                "code": "budget_unverified",
+                "severity": "warning",
+                "message": "Budget fit is unknown. Missing estimates were not treated as zero.",
+                "correctable": False,
             }
         )
+    else:
+        total = int(budget.get("total") or 0)
+        if trip_budget and total > trip_budget:
+            findings.append(
+                {
+                    "code": "budget_exceeded",
+                    "severity": "error",
+                    "message": f"Estimated ₹{total} exceeds budget ₹{trip_budget}",
+                    "correctable": True,
+                }
+            )
+    for day in days:
+        if day.get("geo_warning"):
+            findings.append(
+                {
+                    "code": "geo_span_straight_line",
+                    "severity": "warning",
+                    "message": day["geo_warning"],
+                    "correctable": False,
+                }
+            )
     if not state.get("transport_options"):
         findings.append({"code": "missing_transport", "severity": "warning", "message": "No transport options", "correctable": False})
     if not state.get("accommodation_options"):
         findings.append({"code": "missing_stay", "severity": "warning", "message": "No accommodation options", "correctable": False})
 
     parts = ["intercity_travel", "accommodation", "meals", "local_travel", "attractions", "contingency"]
-    if all(p in budget for p in parts):
+    if budget.get("verification_status") != "unknown" and all(p in budget for p in parts):
         recomputed = sum(int(budget[p]) for p in parts)
         if recomputed != int(budget.get("total") or -1):
             findings.append(
@@ -456,6 +497,10 @@ async def validator_node(state: TravelGraphState) -> dict[str, Any]:
 
 
 async def aggregator_node(state: TravelGraphState) -> dict[str, Any]:
+    if get_settings().knowledge_mode == "rag":
+        from app.services.planner_knowledge import rag_aggregate
+
+        return rag_aggregate(state)
     norm = state.get("normalized_request") or {}
     budget = state.get("budget_breakdown") or {}
     hotels = state.get("accommodation_options") or []

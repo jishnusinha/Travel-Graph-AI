@@ -42,12 +42,12 @@ export default function NewTripPage() {
     resolver: zodResolver(tripPromptSchema),
     defaultValues: {
       prompt: (location.state as { prompt?: string } | null)?.prompt ?? '',
-      destination: '',
-      origin: user?.preferences?.home_city ?? 'Kolkata, India',
+      destination: (location.state as { destination?: string } | null)?.destination ?? '',
+      origin: (location.state as { origin?: string } | null)?.origin || user?.preferences?.home_city || 'Kolkata, India',
       start_date: '',
       end_date: '',
       travelers: 2,
-      budget_inr: 35000,
+      budget_inr: (location.state as { budget_inr?: number } | null)?.budget_inr ?? 35000,
     },
   })
   const prompt = watch('prompt') ?? ''

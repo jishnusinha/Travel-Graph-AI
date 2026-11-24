@@ -116,6 +116,7 @@ class Trip(Base, TimestampMixin):
     accommodation: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     current_version: Mapped[int] = mapped_column(Integer, default=1)
     public_code: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    destination_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True, index=True)
 
     user: Mapped[User] = relationship(back_populates="trips")
     days: Mapped[list[TripDay]] = relationship(back_populates="trip", cascade="all, delete-orphan")
@@ -135,6 +136,9 @@ class TripVersion(Base, TimestampMixin):
     version: Mapped[int] = mapped_column(Integer, nullable=False)
     snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     change_summary: Mapped[str] = mapped_column(String(255), default="")
+    snapshot_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    plan_schema_version: Mapped[str] = mapped_column(String(32), default="v1")
+    evidence: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
 
     trip: Mapped[Trip] = relationship(back_populates="versions")
 
@@ -170,6 +174,15 @@ class TripActivity(Base, TimestampMixin):
     image: Mapped[str] = mapped_column(String(255), default="")
     estimated_cost_inr: Mapped[int] = mapped_column(Integer, default=0)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    attraction_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    lat: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    lon: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    duration_minutes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    citation_ids: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    verification_status: Mapped[str] = mapped_column(String(32), default="catalog")
+    cost_low_inr: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    cost_high_inr: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    cost_basis: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
 
     day: Mapped[TripDay] = relationship(back_populates="activities")
 
@@ -211,6 +224,11 @@ class AgentRun(Base, TimestampMixin):
     cost_provenance: Mapped[str] = mapped_column(String(64), default="demo")
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     revision_number: Mapped[int] = mapped_column(Integer, default=1)
+    knowledge_mode: Mapped[str] = mapped_column(String(16), default="catalog")
+    snapshot_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    generation_provenance: Mapped[str] = mapped_column(String(64), default="catalog_fixture")
+    parent_run_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    selected_evidence: Mapped[list[Any]] = mapped_column(JSON, default=list)
 
     user: Mapped[User] = relationship(back_populates="runs")
     trip: Mapped[Optional[Trip]] = relationship(back_populates="runs")
@@ -296,6 +314,11 @@ class EvaluationRun(Base, TimestampMixin):
     summary: Mapped[str] = mapped_column(Text, default="")
     judge_model: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     judge_prompt_version: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    dataset_version: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    strategy: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    snapshot_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    score_provenance: Mapped[str] = mapped_column(String(64), default="deterministic")
+    sample_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     run: Mapped[AgentRun] = relationship(back_populates="evaluations")
     metrics: Mapped[list[EvaluationMetric]] = relationship(
