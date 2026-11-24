@@ -57,6 +57,16 @@ export interface TerraEvidence {
   rank?: number
 }
 
+export interface TerraPhoto {
+  url: string
+  alt?: string
+  author?: string
+  license_name?: string
+  license_url?: string
+  source_url?: string
+  attribution?: string
+}
+
 export interface TerraDestination {
   destination_id: string
   slug: string
@@ -69,6 +79,7 @@ export interface TerraDestination {
   lat?: number | null
   lon?: number | null
   kind?: string
+  photo?: TerraPhoto | null
 }
 
 export interface DiscoveryResult {
@@ -97,10 +108,44 @@ export interface KnowledgeStats {
   chunks?: number
   attractions?: number
   images?: number
+  entities?: number
+  relationships?: number
+  license_coverage?: Record<string, number>
+  image_licenses?: Record<string, number>
   embedding_kind?: string
   embedding_model?: string
   capabilities?: Record<string, unknown>
   source_status_note?: string
+}
+
+export interface KnowledgeEntity {
+  id: string
+  entity_type: string
+  label: string
+  external_key?: string
+  ref_id?: string | null
+}
+
+export interface KnowledgeEdge {
+  id: string
+  subject_id: string
+  predicate: string
+  object_id: string
+  evidence_chunk_id?: string | null
+  method?: string
+  confidence?: number
+  hop?: number
+  evidence?: { chunk_id: string; section_path?: string; excerpt?: string }
+}
+
+export interface KnowledgeGraph {
+  snapshot_id: string
+  seed?: { id: string; slug: string; name: string } | null
+  hops?: number
+  predicate?: string | null
+  nodes: KnowledgeEntity[]
+  edges: KnowledgeEdge[]
+  note?: string
 }
 
 export const terraApi = {
@@ -113,7 +158,10 @@ export const terraApi = {
     api.post<DiscoveryResult>('/discovery/search', { query, strategy, filters: filters ?? {} }),
   ask: (slug: string, query: string) => api.post<Record<string, unknown>>(`/destinations/${slug}/ask`, { query }),
   compare: (destination_ids: string[]) => api.post<{ results: Array<Record<string, unknown>>; note: string }>('/destinations/compare', { destination_ids }),
-  graph: (slug: string) => api.get<{ nodes: Array<Record<string, string>>; edges: Array<Record<string, unknown>>; note?: string }>(`/destinations/${slug}/graph`),
+  graph: (slug: string, hops = 1, predicate?: string) =>
+    api.get<KnowledgeGraph>(`/destinations/${slug}/graph`, { hops, predicate }),
+  entities: (query?: { q?: string; entity_type?: string }) =>
+    api.get<{ items: KnowledgeEntity[]; snapshot_id: string }>('/knowledge/entities', query),
   save: (destination_id: string) => api.post<{ id: string; destination_id: string }>('/saved-destinations', { destination_id }),
   saved: () => api.get<{ items: Array<Record<string, string>> }>('/saved-destinations'),
   unsave: (id: string) => api.delete<{ deleted: boolean }>(`/saved-destinations/${id}`),

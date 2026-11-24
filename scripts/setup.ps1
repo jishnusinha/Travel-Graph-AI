@@ -1,4 +1,5 @@
 ﻿# TravelGraph AI — Windows setup
+param([switch]$SkipModels)
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
@@ -44,7 +45,13 @@ Write-Host "Running migrations (create_all) + seed..."
 & $Py -m app.db.migrate
 & $Py -m app.seed
 
+if (-not $SkipModels) {
+  Write-Host "Preparing the local knowledge snapshot and models..."
+  & "$Root\scripts\prepare-knowledge.ps1"
+}
+
 Write-Host ""
 Write-Host "Setup complete." -ForegroundColor Green
 Write-Host "Demo login: demo@travelgraph.local / TravelGraphDemo!2026"
+Write-Host "Offline retrieval: .\scripts\prepare-knowledge.ps1"
 Write-Host "Next: .\scripts\dev.ps1   or start backend + frontend separately"

@@ -1,7 +1,7 @@
-# Fetch Wikivoyage extracts and build a keyword snapshot.
+# Fetch Wikivoyage extracts and rebuild the snapshot, including vectors when a model is cached.
 param(
   [string]$Snapshot = "india-v1",
-  [int]$Limit = 12
+  [int]$Limit = 0
 )
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
@@ -10,4 +10,4 @@ if (-not (Test-Path $Py)) { throw "Run scripts/setup.ps1 first." }
 Set-Location (Join-Path $Root "backend")
 & $Py -m app.ingestion.cli fetch --limit $Limit
 & $Py -m app.ingestion.cli build --snapshot $Snapshot --limit $Limit
-Write-Host "Snapshot $Snapshot built. Dense search stays unavailable until a local embedding model is cached."
+Write-Host "Snapshot $Snapshot built. If vectors are missing, run .\scripts\prepare-knowledge.ps1."

@@ -64,7 +64,7 @@ export default function RetrievalPage() {
           className="tg-btn tg-btn-primary mt-3"
           onClick={async () => {
             try {
-              setBench(await terraApi.benchmark(['keyword', 'hybrid_rerank']))
+              setBench(await terraApi.benchmark(['keyword', 'dense', 'hybrid', 'hybrid_rerank', 'graph_hybrid']))
               setError(null)
             } catch (err) {
               setError(err instanceof ApiError ? err.message : 'Benchmark failed')

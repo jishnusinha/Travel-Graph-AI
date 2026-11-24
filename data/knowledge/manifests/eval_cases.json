@@ -3,12 +3,120 @@
     "id": "waterfalls-hills",
     "query": "quiet hills and waterfalls",
     "expected_slug": "sohra",
-    "notes": "Reviewed against the synthetic fixture and any snapshot that actually contains Sohra."
+    "notes": "Reviewed: Sohra/Cherrapunji is the labeled waterfall hills answer for this snapshot."
   },
   {
     "id": "coast-beaches",
     "query": "beaches and the sea",
     "expected_slug": "goa",
-    "notes": "Expected only when a Goa document is in the active snapshot."
+    "notes": "Reviewed: Goa is the primary beach destination in the corpus."
+  },
+  {
+    "id": "tea-estate-hills",
+    "query": "tea gardens in the hills",
+    "expected_slug": "darjeeling",
+    "notes": "Reviewed: Darjeeling tea estates are the intended hit; Munnar may also rank."
+  },
+  {
+    "id": "kerala-backwaters",
+    "query": "backwaters and houseboats",
+    "expected_slug": "kerala-backwaters",
+    "notes": "Reviewed against the Kerala Backwaters Wikivoyage extract."
+  },
+  {
+    "id": "rajasthan-palace-city",
+    "query": "pink city palaces and forts",
+    "expected_slug": "jaipur",
+    "notes": "Reviewed: Jaipur is the pink city entry in the registry."
+  },
+  {
+    "id": "lake-palace-rajasthan",
+    "query": "lakes and palaces in Rajasthan",
+    "expected_slug": "udaipur",
+    "notes": "Reviewed: Udaipur lake-palace theme."
+  },
+  {
+    "id": "himachal-mountain-town",
+    "query": "Himachal mountain town for a weekend",
+    "expected_slug": "manali",
+    "notes": "Reviewed: Manali is the Himachal mountain town in the corpus."
+  },
+  {
+    "id": "ganges-ghats",
+    "query": "ghats on the Ganges",
+    "expected_slug": "varanasi",
+    "notes": "Reviewed against the Varanasi Wikipedia/Wikivoyage text."
+  },
+  {
+    "id": "hampi-ruins",
+    "query": "ruined temples and boulder landscape",
+    "expected_slug": "hampi",
+    "notes": "Reviewed: Hampi ruins are the intended destination."
+  },
+  {
+    "id": "sikkim-capital",
+    "query": "capital of Sikkim monasteries",
+    "expected_slug": "gangtok",
+    "notes": "Reviewed: Gangtok is the Sikkim capital entry."
+  },
+  {
+    "id": "living-root-bridges",
+    "query": "living root bridges in Meghalaya",
+    "expected_slug": "nongriat",
+    "notes": "Reviewed: Nongriat page covers double-decker living root bridges."
+  },
+  {
+    "id": "wettest-place",
+    "query": "one of the wettest places on earth",
+    "expected_slug": "mawsynram",
+    "notes": "Reviewed: Mawsynram Wikipedia lead is about rainfall."
+  },
+  {
+    "id": "french-quarter-coast",
+    "query": "French colonial seaside town in India",
+    "expected_slug": "puducherry",
+    "notes": "Reviewed: Puducherry is the intended coastal colonial town."
+  },
+  {
+    "id": "meghalaya-capital",
+    "query": "capital of Meghalaya hills",
+    "expected_slug": "shillong",
+    "notes": "Reviewed: Shillong is the Meghalaya capital destination."
+  },
+  {
+    "id": "yoga-ganges-town",
+    "query": "yoga and the Ganges in the foothills",
+    "expected_slug": "rishikesh",
+    "notes": "Reviewed: Rishikesh is the yoga foothills destination."
+  },
+  {
+    "id": "arunachal-monastery-town",
+    "query": "Buddhist monastery town in Arunachal",
+    "expected_slug": "tawang",
+    "notes": "Reviewed: Tawang is the intended Arunachal monastery town."
+  },
+  {
+    "id": "assam-wildlife",
+    "query": "rhinos in a national park in Assam",
+    "expected_slug": "kaziranga",
+    "notes": "Reviewed: Kaziranga is the Assam wildlife park entry."
+  },
+  {
+    "id": "dzukou-valley-trek",
+    "query": "flower valley trek on the Manipur Nagaland border",
+    "expected_slug": "dzukou-valley",
+    "notes": "Reviewed against the Dzukou Valley Wikipedia lead."
+  },
+  {
+    "id": "dawki-river",
+    "query": "clear river border town in Meghalaya",
+    "expected_slug": "dawki",
+    "notes": "Reviewed: Dawki / Umngot river border town."
+  },
+  {
+    "id": "mysuru-palace",
+    "query": "palace city in Karnataka",
+    "expected_slug": "mysuru",
+    "notes": "Reviewed: Mysuru/Mysore palace city."
   }
 ]

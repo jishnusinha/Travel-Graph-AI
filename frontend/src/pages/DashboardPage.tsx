@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, Briefcase, Database, Layers, Loader2, Send, SlidersHorizontal, Sparkles, Star } from 'lucide-react'
 import { ChartCard } from '@/components/charts/ChartCard'
 import { DonutChart } from '@/components/charts/charts'
+import { DestinationPhoto } from '@/components/terra/DestinationPhoto'
 import { TripCard } from '@/components/trips/TripCard'
 import { EmptyState, ErrorState } from '@/components/ui/EmptyState'
 import { CardGridSkeleton, Skeleton } from '@/components/ui/Skeleton'
@@ -13,6 +15,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useCosts, useCreateTrip, useDashboard } from '@/hooks/queries'
 import { agentName, agentColor } from '@/lib/agents'
 import { ApiError } from '@/lib/api'
+import { terraApi } from '@/lib/terra'
 import { formatDuration, formatUSD } from '@/lib/utils'
 
 const DEFAULT_PROMPT = 'Plan a 5-day Goa trip for two under ₹35,000 with beaches and local food.'
@@ -24,6 +27,7 @@ export default function DashboardPage() {
   const dash = useDashboard()
   const costs = useCosts({ days: 30 })
   const create = useCreateTrip()
+  const highlights = useQuery({ queryKey: ['terra-highlights'], queryFn: terraApi.highlights })
   const [prompt, setPrompt] = useState('')
 
   const d = dash.data
@@ -85,6 +89,31 @@ export default function DashboardPage() {
         <ErrorState error={dash.error} onRetry={() => dash.refetch()} title="Could not load your dashboard" />
       ) : (
         <>
+          {(highlights.data?.items?.length ?? 0) > 0 && (
+            <section aria-labelledby="terra-curated" className="space-y-3">
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <h2 id="terra-curated" className="text-xl font-bold">Curated from Terra</h2>
+                  <p className="text-xs text-muted">Live snapshot places. Open Explore for evidence-backed search.</p>
+                </div>
+                <Link to="/explore" className="text-sm font-semibold text-primary-strong hover:underline">Explore</Link>
+              </div>
+              <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {(highlights.data?.items ?? []).slice(0, 4).map((item) => (
+                  <li key={item.slug}>
+                    <Link to={`/destinations/${item.slug}`} className="block overflow-hidden rounded-2xl border border-line bg-surface">
+                      <DestinationPhoto photo={item.photo} className="aspect-[4/3] w-full" />
+                      <div className="p-3">
+                        <p className="text-[11px] uppercase tracking-wide text-muted">{item.region}</p>
+                        <p className="font-semibold">{item.name}</p>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           <section aria-label="Key metrics" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             <StatCard icon={Briefcase} label="Trips Planned" value={d?.trips_planned} loading={dash.isPending} tone="primary" hint={d ? `${d.trips_completed} completed · ${d.trips_in_progress} in progress` : undefined} />
             <StatCard icon={Layers} label="Agent Runs" value={d?.agent_runs} loading={dash.isPending} tone="mint" hint="All time" />

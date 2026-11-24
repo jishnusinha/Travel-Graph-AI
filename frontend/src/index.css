@@ -297,19 +297,82 @@
 
 /* Terra editorial scope. Inherits into children; does not replace the dark studio. */
 .terra-scope {
-  --tg-canvas: #f6f3eb;
+  --terra-forest: #243e36;
+  --terra-ivory: #f6f3eb;
+  --terra-clay: #bb7955;
+  --terra-sage: #a5b4a0;
+  --tg-canvas: var(--terra-ivory);
   --tg-canvas-wash: #efeae0;
   --tg-surface: #ffffff;
   --tg-surface-2: #f3efe6;
   --tg-ink: #222722;
   --tg-muted: #59665e;
   --tg-line: #ddd6c8;
-  --tg-primary: #243e36;
+  --tg-primary: var(--terra-forest);
   --tg-primary-strong: #1b302a;
   --tg-primary-soft: #e7efe9;
-  --tg-primary-ink: #243e36;
+  --tg-primary-ink: var(--terra-forest);
   --tg-ring: rgba(36, 62, 54, 0.35);
   color: var(--tg-ink);
   background: var(--tg-canvas);
 }
-.terra-serif { font-family: "Palatino Linotype", Palatino, Georgia, serif; }
+.terra-serif {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.terra-card {
+  border: 1px solid var(--tg-line);
+  background: var(--tg-surface);
+  border-radius: 1.25rem;
+}
+.terra-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.terra-btn-primary {
+  background: var(--terra-forest);
+  color: #fff;
+}
+.terra-btn-primary:hover:not(:disabled) {
+  background: #1b302a;
+}
+.terra-btn-ghost {
+  background: #fff;
+  border-color: var(--tg-line);
+  color: var(--tg-ink);
+}
+.terra-btn-accent {
+  background: var(--terra-clay);
+  color: #fff;
+}
+.terra-hero-scrim {
+  background:
+    linear-gradient(180deg, rgba(34, 39, 34, 0.35) 0%, rgba(34, 39, 34, 0.55) 45%, rgba(34, 39, 34, 0.78) 100%);
+}
+@keyframes terra-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes terra-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.terra-rise {
+  animation: terra-rise 0.7s ease both;
+}
+.terra-fade {
+  animation: terra-fade 0.9s ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .terra-rise,
+  .terra-fade {
+    animation: none;
+  }
+}

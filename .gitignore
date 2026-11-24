@@ -7,8 +7,15 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+# Runtime databases and backups. These files can contain password hashes and session tokens.
 data/*.sqlite
+data/*.sqlite*
+data/**/*.sqlite
+data/**/*.sqlite*
 data/*.db
+data/*.db*
+data/**/*.db
+data/**/*.db*
 *.sqlite-wal
 *.sqlite-shm
 *.db-wal

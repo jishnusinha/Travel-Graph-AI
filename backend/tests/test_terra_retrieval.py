@@ -71,11 +71,25 @@ def test_hybrid_records_dense_stage(synthetic_snapshot):
     assert "test_double" == found["embedding_kind"]
 
 
-def test_rerank_fallback_is_not_labeled_reranked(synthetic_snapshot):
+def test_rerank_fallback_is_not_labeled_reranked(monkeypatch, synthetic_snapshot):
+    monkeypatch.setattr("app.rag.store.rerank_scores", lambda query, texts: None)
     found = search_sync(query="waterfalls", user_id=_user_id(), strategy="hybrid_rerank")
     assert found["reranked"] is False
     assert "rerank_unavailable" in found["warnings"]
     assert found["strategy_applied"] != "hybrid_rerank"
+
+
+def test_hybrid_rerank_is_applied_when_the_cross_encoder_scores(monkeypatch, synthetic_snapshot):
+    monkeypatch.setattr(
+        "app.rag.store.rerank_scores",
+        lambda query, texts: [float(len(texts) - index) for index in range(len(texts))],
+    )
+    found = search_sync(query="waterfalls in the hills", user_id=_user_id(), strategy="hybrid_rerank")
+    assert found["dense_count"] > 0
+    assert found["keyword_count"] > 0
+    assert found["reranked"] is True
+    assert found["strategy_applied"] == "hybrid_rerank"
+    assert "fell_back_to_keyword" not in found["warnings"]
 
 
 def test_missing_model_keyword_fallback(monkeypatch, synthetic_snapshot):

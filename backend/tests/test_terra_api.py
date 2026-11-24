@@ -73,6 +73,25 @@ async def test_personalization_requires_consent(demo, ready):
     assert ranked.json()["generation_mode"] == "explicit_interest_match"
 
 
+async def test_media_rejects_unknown_slug(anon, ready):
+    missing = await anon.get("/api/v1/knowledge/media/not-a-real-place")
+    assert missing.status_code == 404
+    traversal = await anon.get("/api/v1/knowledge/media/../secrets")
+    assert traversal.status_code == 404
+
+
+async def test_knowledge_graph_and_entity_search(demo, ready):
+    entities = await demo.get("/api/v1/knowledge/entities", params={"q": "Sohra"})
+    assert entities.status_code == 200, entities.text
+    assert any(item["label"] == "Sohra" for item in entities.json()["items"])
+    graph = await demo.get("/api/v1/destinations/sohra/graph", params={"hops": 1})
+    assert graph.status_code == 200, graph.text
+    body = graph.json()
+    assert body["seed"]["slug"] == "sohra"
+    assert body["nodes"]
+    assert any(edge["predicate"] in {"located_in", "within_80km_straight_line"} for edge in body["edges"])
+
+
 async def test_compare_limits_and_missing_prices(demo, ready):
     listing = await demo.get("/api/v1/destinations")
     ids = [item["destination_id"] for item in listing.json()["items"][:2]]

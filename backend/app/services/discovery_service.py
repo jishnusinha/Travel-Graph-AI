@@ -63,6 +63,8 @@ def discover(
                 "name": bucket["name"],
                 "region": bucket["region"],
                 "summary": profile["summary"],
+                "themes": profile.get("themes") or [],
+                "photo": profile.get("photo"),
                 "rank": rank,
                 "matched_preferences": matched,
                 "unknown_preferences": unknown,
@@ -174,13 +176,13 @@ def _public_evidence(ev: dict[str, Any]) -> dict[str, Any]:
 
 
 def _profile(destination_id: str | None) -> dict[str, Any]:
-    empty = {"source_status": "unknown", "summary": "", "has_estimate": False}
+    empty = {"source_status": "unknown", "summary": "", "has_estimate": False, "themes": [], "photo": None}
     if not destination_id:
         return empty
     conn = connect()
     try:
         row = conn.execute(
-            "SELECT source_status, summary FROM destinations WHERE id = ?", (destination_id,)
+            "SELECT id, slug, source_status, summary, themes FROM destinations WHERE id = ?", (destination_id,)
         ).fetchone()
         estimate = conn.execute(
             "SELECT 1 FROM travel_cost_estimates WHERE destination_id = ? LIMIT 1", (destination_id,)
@@ -191,9 +193,35 @@ def _profile(destination_id: str | None) -> dict[str, Any]:
             "source_status": row["source_status"],
             "summary": row["summary"] or "",
             "has_estimate": estimate is not None,
+            "themes": _loads(row["themes"]),
+            "photo": _photo(conn, row["id"], row["slug"]),
         }
     finally:
         conn.close()
+
+
+def _photo(conn: sqlite3.Connection, destination_id: str, slug: str) -> dict[str, Any] | None:
+    image = conn.execute(
+        """
+        SELECT alt, author, license_name, license_url, source_url, attribution, local_path
+        FROM destination_images
+        WHERE destination_id = ? AND local_path != ''
+        ORDER BY created_at
+        LIMIT 1
+        """,
+        (destination_id,),
+    ).fetchone()
+    if image is None:
+        return None
+    return {
+        "url": f"/api/v1/knowledge/media/{slug}",
+        "alt": image["alt"] or "",
+        "author": image["author"] or "",
+        "license_name": image["license_name"] or "",
+        "license_url": image["license_url"] or "",
+        "source_url": image["source_url"] or "",
+        "attribution": image["attribution"] or "",
+    }
 
 
 def _loads(raw: str | None) -> list:

@@ -27,6 +27,7 @@
         "Manali"
       ],
       "wikivoyage_title": "Manali",
+      "wikipedia_title": "Manali, Himachal Pradesh",
       "lat": 32.2396,
       "lon": 77.1887,
       "coordinate_status": "existing_catalog",
@@ -244,6 +245,7 @@
         "Dawki"
       ],
       "wikivoyage_title": "Dawki",
+      "wikipedia_title": "Dawki",
       "lat": null,
       "lon": null,
       "coordinate_status": "unknown",
@@ -260,6 +262,7 @@
         "Jowai"
       ],
       "wikivoyage_title": "Jowai",
+      "wikipedia_title": "Jowai",
       "lat": null,
       "lon": null,
       "coordinate_status": "unknown",
@@ -276,6 +279,7 @@
         "Nongriat"
       ],
       "wikivoyage_title": "Nongriat",
+      "wikipedia_title": "Nongriat",
       "lat": null,
       "lon": null,
       "coordinate_status": "unknown",
@@ -292,6 +296,7 @@
         "Mawsynram"
       ],
       "wikivoyage_title": "Mawsynram",
+      "wikipedia_title": "Mawsynram",
       "lat": null,
       "lon": null,
       "coordinate_status": "unknown",
@@ -308,6 +313,7 @@
         "Tura"
       ],
       "wikivoyage_title": "Tura",
+      "wikipedia_title": "Tura, Meghalaya",
       "lat": null,
       "lon": null,
       "coordinate_status": "unknown",
@@ -388,6 +394,7 @@
         "Lachen"
       ],
       "wikivoyage_title": "Lachen",
+      "wikipedia_title": "Lachen, Sikkim",
       "lat": null,
       "lon": null,
       "coordinate_status": "unknown",
@@ -404,6 +411,7 @@
         "Zuluk"
       ],
       "wikivoyage_title": "Zuluk",
+      "wikipedia_title": "Zuluk",
       "lat": null,
       "lon": null,
       "coordinate_status": "unknown",
@@ -468,6 +476,7 @@
         "Lava"
       ],
       "wikivoyage_title": "Lava",
+      "wikipedia_title": "Lava, West Bengal",
       "lat": null,
       "lon": null,
       "coordinate_status": "unknown",
@@ -597,6 +606,7 @@
         "Mechuka"
       ],
       "wikivoyage_title": "Mechuka",
+      "wikipedia_title": "Mechuka",
       "lat": null,
       "lon": null,
       "coordinate_status": "unknown",
@@ -723,9 +733,11 @@
       "kind": "area",
       "region": "Nagaland",
       "aliases": [
-        "Dzükou Valley"
+        "Dzükou Valley",
+        "Dzüko Valley"
       ],
       "wikivoyage_title": "Dzükou Valley",
+      "wikipedia_title": "Dzüko Valley",
       "lat": null,
       "lon": null,
       "coordinate_status": "unknown",
@@ -742,6 +754,7 @@
         "Mokokchung"
       ],
       "wikivoyage_title": "Mokokchung",
+      "wikipedia_title": "Mokokchung",
       "lat": null,
       "lon": null,
       "coordinate_status": "unknown",
@@ -807,6 +820,7 @@
         "Puducherry"
       ],
       "wikivoyage_title": "Puducherry",
+      "wikipedia_title": "Puducherry (union territory)",
       "lat": null,
       "lon": null,
       "coordinate_status": "unknown",

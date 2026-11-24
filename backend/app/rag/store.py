@@ -12,10 +12,11 @@ from typing import Any
 import numpy as np
 
 from app.config import get_settings
-from app.rag.embeddings import get_embedder, rerank_scores
+from app.rag.embeddings import get_embedder, rerank_model_id, rerank_scores
 from app.rag.fusion import cosine_scores, l2_normalize, rrf_fuse
 from app.rag.graphwalk import bfs_evidence
 from app.rag.intent import parse_intent, redact_query
+from app.ingestion.names import name_key
 from app.rag.textutil import chunk_sections, fts_match_query, sha256_text, stable_id
 
 _NOW = lambda: datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
@@ -139,6 +140,7 @@ def import_corpus(payload: dict[str, Any], *, embedder: Any | None = None, activ
                     chunk_rows.append((cid, chunk["text"]))
             for attraction in dest.get("attractions") or []:
                 _upsert_attraction(conn, dest_id, attraction, now)
+            _collapse_attraction_names(conn, dest_id, now)
             for estimate in dest.get("estimates") or []:
                 _insert_estimate(conn, snapshot_id, dest_id, estimate, now)
             for image in dest.get("images") or []:
@@ -272,10 +274,46 @@ def _insert_document(conn: sqlite3.Connection, snapshot_id: str, dest_id: str, d
 
 def _upsert_attraction(conn: sqlite3.Connection, dest_id: str, item: dict[str, Any], now: str) -> None:
     name = item["name"]
-    existing = conn.execute(
-        "SELECT id FROM attractions WHERE destination_id = ? AND name = ?", (dest_id, name)
-    ).fetchone()
+    key = name_key(name)
+    rows = conn.execute(
+        "SELECT id, name, aliases, lat FROM attractions WHERE destination_id = ?",
+        (dest_id,),
+    ).fetchall()
+    existing = next((row for row in rows if name_key(row["name"]) == key or key in _alias_keys(row["aliases"])), None)
     if existing:
+        aliases = _alias_list(existing["aliases"])
+        if name != existing["name"] and name not in aliases:
+            aliases.append(name)
+        for alias in item.get("aliases") or []:
+            if alias not in aliases and alias != existing["name"]:
+                aliases.append(alias)
+        lat = item.get("lat") if existing["lat"] is None else None
+        if lat is not None:
+            conn.execute(
+                """
+                UPDATE attractions
+                SET aliases = ?, lat = ?, lon = ?, geometry_kind = ?, osm_type = ?, osm_id = ?,
+                    coordinate_status = ?, source_refs = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (
+                    _json(aliases),
+                    item.get("lat"),
+                    item.get("lon"),
+                    item.get("geometry_kind") or "point",
+                    item.get("osm_type"),
+                    str(item["osm_id"]) if item.get("osm_id") is not None else None,
+                    item.get("coordinate_status") or "source_provided",
+                    _json(item.get("source_refs") or []),
+                    now,
+                    existing["id"],
+                ),
+            )
+        else:
+            conn.execute(
+                "UPDATE attractions SET aliases = ?, updated_at = ? WHERE id = ?",
+                (_json(aliases), now, existing["id"]),
+            )
         return
     conn.execute(
         """
@@ -301,6 +339,54 @@ def _upsert_attraction(conn: sqlite3.Connection, dest_id: str, item: dict[str, A
             now,
         ),
     )
+
+
+def _collapse_attraction_names(conn: sqlite3.Connection, dest_id: str, now: str) -> None:
+    """Keep one row when the same place was stored under a repeated name. Trip activities follow the kept id."""
+    rows = conn.execute(
+        "SELECT id, name, aliases, lat FROM attractions WHERE destination_id = ?",
+        (dest_id,),
+    ).fetchall()
+    groups: dict[str, list[sqlite3.Row]] = {}
+    for row in rows:
+        groups.setdefault(name_key(row["name"]), []).append(row)
+    for group in groups.values():
+        if len(group) < 2:
+            continue
+        ranked = sorted(group, key=lambda row: (row["lat"] is None, row["id"]))
+        keeper = ranked[0]
+        aliases = _alias_list(keeper["aliases"])
+        extra_ids = [row["id"] for row in ranked[1:]]
+        for other in ranked[1:]:
+            if other["name"] != keeper["name"] and other["name"] not in aliases:
+                aliases.append(other["name"])
+            for alias in _alias_list(other["aliases"]):
+                if alias != keeper["name"] and alias not in aliases:
+                    aliases.append(alias)
+        conn.execute(
+            "UPDATE attractions SET aliases = ?, updated_at = ? WHERE id = ?",
+            (_json(aliases), now, keeper["id"]),
+        )
+        marks = ",".join("?" for _ in extra_ids)
+        conn.execute(
+            f"UPDATE trip_activities SET attraction_id = ? WHERE attraction_id IN ({marks})",
+            (keeper["id"], *extra_ids),
+        )
+        conn.execute(f"DELETE FROM attractions WHERE id IN ({marks})", extra_ids)
+
+
+def _alias_list(raw: Any) -> list[str]:
+    if isinstance(raw, list):
+        return [str(item) for item in raw]
+    try:
+        parsed = json.loads(raw or "[]")
+    except json.JSONDecodeError:
+        return []
+    return [str(item) for item in parsed] if isinstance(parsed, list) else []
+
+
+def _alias_keys(raw: Any) -> set[str]:
+    return {name_key(item) for item in _alias_list(raw) if name_key(item)}
 
 
 def _insert_estimate(conn: sqlite3.Connection, snapshot_id: str, dest_id: str, item: dict[str, Any], now: str) -> None:
@@ -580,31 +666,20 @@ def search_sync(
         if requested in {"dense", "hybrid", "hybrid_rerank", "graph_hybrid"}:
             embedder = embedder or get_embedder()
             matrix, ids = _load_vectors(snapshot_id)
-            if embedder is None or matrix is None:
-                warnings.append("dense_unavailable")
-            elif snap["embedding_kind"] not in {embedder.kind, "fastembed", "sentence_transformer"} and snap["embedding_kind"] != embedder.kind:
-                if snap["embedding_model"] != embedder.model_id or int(snap["embedding_dim"] or 0) != embedder.dimension:
-                    warnings.append("dense_model_mismatch")
-                    embedder = None
-            if embedder is not None and matrix is not None and int(snap["embedding_dim"] or matrix.shape[1]) == embedder.dimension:
-                if snap["embedding_model"] and snap["embedding_model"] != embedder.model_id:
-                    warnings.append("dense_model_mismatch")
-                else:
-                    qv = l2_normalize(embedder.encode([query], is_query=True))[0]
-                    scores = cosine_scores(matrix, qv)
-                    order = sorted(
-                        range(len(ids)),
-                        key=lambda i: (-float(scores[i]), ids[i]),
-                    )
-                    for i in order:
-                        cid = ids[i]
-                        if cid in allowed:
-                            dense_ids.append(cid)
-                            dense_scores[cid] = float(scores[i])
-                        if len(dense_ids) >= top_k:
-                            break
-            elif embedder is not None and matrix is not None:
-                warnings.append("dense_dimension_mismatch")
+            block = _dense_block_reason(snap, embedder, matrix)
+            if block:
+                warnings.append(block)
+            else:
+                qv = l2_normalize(embedder.encode([query], is_query=True))[0]
+                scores = cosine_scores(matrix, qv)
+                order = sorted(range(len(ids)), key=lambda i: (-float(scores[i]), ids[i]))
+                for i in order:
+                    cid = ids[i]
+                    if cid in allowed:
+                        dense_ids.append(cid)
+                        dense_scores[cid] = float(scores[i])
+                    if len(dense_ids) >= top_k:
+                        break
         timings["dense_ms"] = _ms(t2)
 
         graph_ids: list[str] = []
@@ -615,13 +690,13 @@ def search_sync(
                 warnings.append("graph_empty")
         timings["graph_ms"] = _ms(t3)
 
-        lists = []
+        lists: list[list[str]] = []
         if requested == "keyword":
             lists = [keyword_ids]
-            applied = "keyword"
+            applied = "keyword" if keyword_ids else "unavailable"
         elif requested == "dense":
             lists = [dense_ids]
-            applied = "dense" if dense_ids or "dense_unavailable" not in warnings else "unavailable"
+            applied = "dense" if dense_ids else "unavailable"
         else:
             if keyword_ids:
                 lists.append(keyword_ids)
@@ -637,31 +712,36 @@ def search_sync(
                     warnings.append("fell_back_to_keyword")
             elif dense_ids:
                 applied = "dense"
+                if requested != "dense":
+                    warnings.append("fell_back_to_dense")
             else:
                 applied = "unavailable"
         if requested == "graph_hybrid" and graph_ids and applied == "hybrid":
             applied = "graph_hybrid"
-        fused = rrf_fuse([lst for lst in lists if lst]) if any(lists) else []
+        present = [lst for lst in lists if lst]
+        fused = rrf_fuse(present) if present else []
         timings["fusion_ms"] = 0.0
 
-        pool = [cid for cid, _ in fused[: max(top_k, final_k)]]
+        pool = [cid for cid, _ in fused[: max(top_k, final_k)] if cid in chunks]
         t4 = time.perf_counter()
         reranked = False
-        score_kind = "rrf" if applied in {"hybrid", "graph_hybrid"} else applied
-        ranking = [(cid, score) for cid, score in fused]
-        if requested in {"hybrid_rerank"} and pool and applied in {"hybrid", "keyword", "dense"}:
-            scores = rerank_scores(query, [chunks[cid]["text"] for cid in pool if cid in chunks])
-            if scores is None:
+        ranking = list(fused)
+        score_kind = "rrf" if len(present) > 1 else applied
+        if requested == "hybrid_rerank" and pool:
+            texts = [chunks[cid]["text"] for cid in pool]
+            scores = rerank_scores(query, texts)
+            if scores is None or len(scores) != len(pool):
                 warnings.append("rerank_unavailable")
             else:
                 reranked = True
-                applied = "hybrid_rerank" if "fell_back_to_keyword" not in warnings and dense_ids and keyword_ids else applied
-                if not (dense_ids and keyword_ids):
-                    warnings.append("rerank_on_partial_candidates")
-                    applied = f"{applied}+rerank" if applied != "unavailable" else applied
-                order = sorted(range(len(pool)), key=lambda i: (-scores[i], pool[i]))
+                order = sorted(range(len(pool)), key=lambda i: (-float(scores[i]), pool[i]))
                 ranking = [(pool[i], float(scores[i])) for i in order]
                 score_kind = "cross_encoder"
+                if keyword_ids and dense_ids:
+                    applied = "hybrid_rerank"
+                else:
+                    warnings.append("rerank_on_partial_candidates")
+                    applied = f"{applied}+rerank" if applied != "unavailable" else applied
         timings["rerank_ms"] = _ms(t4)
 
         chosen: list[str] = []
@@ -708,7 +788,12 @@ def search_sync(
                 now,
             ),
         )
-        stage_rows = [("keyword", keyword_ids, keyword_scores, "bm25"), ("dense", dense_ids, dense_scores, "cosine")]
+        stage_rows = [
+            ("keyword", keyword_ids, keyword_scores, "bm25"),
+            ("dense", dense_ids, dense_scores, "cosine"),
+            ("rrf", [cid for cid, _ in fused], {cid: score for cid, score in fused}, "rrf"),
+            ("rerank", [cid for cid, _ in ranking] if reranked else [], {cid: score for cid, score in ranking} if reranked else {}, "cross_encoder"),
+        ]
         for stage, ids, scores, kind in stage_rows:
             for rank, cid in enumerate(ids, start=1):
                 conn.execute(
@@ -793,6 +878,7 @@ def search_sync(
             "warnings": warnings,
             "timings_ms": {k: round(v, 3) for k, v in timings.items()},
             "reranked": reranked,
+            "rerank_model": rerank_model_id() if reranked else "",
             "evidence": citations,
             "keyword_count": len(keyword_ids),
             "dense_count": len(dense_ids),
@@ -834,6 +920,26 @@ def _load_chunks(conn: sqlite3.Connection, snapshot_id: str) -> dict[str, dict[s
         (snapshot_id,),
     ).fetchall()
     return {row["chunk_id"]: dict(row) for row in rows}
+
+
+def _dense_block_reason(snap: sqlite3.Row, embedder: Any, matrix: np.ndarray | None) -> str | None:
+    """Why dense search cannot run. None means the snapshot vectors match this model."""
+    if embedder is None or matrix is None or matrix.size == 0:
+        return "dense_unavailable"
+    snap_model = snap["embedding_model"] or ""
+    if snap_model and snap_model != getattr(embedder, "model_id", ""):
+        return "dense_model_mismatch"
+    snap_kind = snap["embedding_kind"] or ""
+    kind = getattr(embedder, "kind", "")
+    if snap_kind and snap_kind != kind:
+        return "dense_model_mismatch"
+    snap_dim = int(snap["embedding_dim"] or 0)
+    dimension = int(getattr(embedder, "dimension", 0) or 0)
+    if snap_dim and dimension and snap_dim != dimension:
+        return "dense_dimension_mismatch"
+    if matrix.ndim != 2 or matrix.shape[1] != dimension:
+        return "dense_dimension_mismatch"
+    return None
 
 
 def _load_vectors(snapshot_id: str) -> tuple[np.ndarray | None, list[str]]:
@@ -929,6 +1035,34 @@ def corpus_stats() -> dict[str, Any]:
                 (snap["id"],),
             ),
             "images": count("SELECT COUNT(*) FROM destination_images WHERE snapshot_id = ?", (snap["id"],)),
+            "entities": count("SELECT COUNT(*) FROM knowledge_entities WHERE snapshot_id = ?", (snap["id"],)),
+            "relationships": count("SELECT COUNT(*) FROM knowledge_relationships WHERE snapshot_id = ?", (snap["id"],)),
+            "license_coverage": {
+                row["license_name"] or "unknown": row["n"]
+                for row in conn.execute(
+                    """
+                    SELECT license_name, COUNT(*) AS n
+                    FROM knowledge_documents
+                    WHERE snapshot_id = ?
+                    GROUP BY license_name
+                    ORDER BY n DESC
+                    """,
+                    (snap["id"],),
+                ).fetchall()
+            },
+            "image_licenses": {
+                row["license_name"] or "unknown": row["n"]
+                for row in conn.execute(
+                    """
+                    SELECT license_name, COUNT(*) AS n
+                    FROM destination_images
+                    WHERE snapshot_id = ?
+                    GROUP BY license_name
+                    ORDER BY n DESC
+                    """,
+                    (snap["id"],),
+                ).fetchall()
+            },
             "embedding_kind": snap["embedding_kind"],
             "embedding_model": snap["embedding_model"],
             "embedding_dim": snap["embedding_dim"],

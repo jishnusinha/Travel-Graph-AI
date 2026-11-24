@@ -1,43 +1,81 @@
+import { useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { DestinationMap } from '@/components/terra/DestinationMap'
 import { readExploreQuery, terraApi, type TerraDestination } from '@/lib/terra'
 
-function project(lat: number, lon: number) {
-  const x = ((lon - 68) / (98 - 68)) * 100
-  const y = ((36 - lat) / (36 - 6)) * 100
-  return { x: Math.min(100, Math.max(0, x)), y: Math.min(100, Math.max(0, y)) }
-}
-
 export default function MapPage() {
-  const destinations = useQuery({ queryKey: ['terra-destinations'], queryFn: () => terraApi.destinations() })
-  const items = (destinations.data?.items ?? []).filter((item) => item.lat != null && item.lon != null) as Array<TerraDestination & { lat: number; lon: number }>
+  const navigate = useNavigate()
+  const destinations = useQuery({ queryKey: ['terra-destinations'], queryFn: () => terraApi.destinations({ }) })
+  const [selected, setSelected] = useState<string | null>(null)
+  const items = useMemo(
+    () => (destinations.data?.items ?? []).filter((item): item is TerraDestination & { lat: number; lon: number } => item.lat != null && item.lon != null),
+    [destinations.data],
+  )
   const missing = (destinations.data?.items ?? []).filter((item) => item.lat == null || item.lon == null)
+  const selectedItem = items.find((item) => item.slug === selected) ?? null
+
   return (
-    <div className="terra-scope -mx-4 -mt-5 px-4 py-6 lg:-mx-6 lg:px-6">
-      <div className="mx-auto max-w-5xl">
-        <div className="flex items-end justify-between gap-3">
+    <div className="terra-scope -mx-4 -mt-5 px-4 py-6 pb-28 lg:-mx-6 lg:px-6 lg:pb-6">
+      <div className="mx-auto max-w-6xl">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="terra-serif text-4xl">Map</h1>
-            <p className="mt-1 text-sm text-muted">Schematic positions from stored coordinates. Not a road map and not a driving route. {readExploreQuery() ? `Last search kept off the URL.` : ''}</p>
+            <p className="mt-1 max-w-2xl text-sm text-muted">
+              Offline MapLibre basemap with a simplified India outline and stored destination pins. Not a road map and not a driving route.
+              {readExploreQuery() ? ' Last search stays in session storage, not the URL.' : ''}
+            </p>
           </div>
-          <Link to="/explore" className="text-sm underline">List</Link>
+          <Link to="/explore" className="terra-btn terra-btn-ghost text-sm">List</Link>
         </div>
-        {destinations.isError && <p className="mt-4" role="alert">The snapshot is not available, so there is nothing to plot.</p>}
-        <div className="relative mt-5 h-[480px] overflow-hidden rounded-[2rem] border border-line bg-[#e7efe9]">
-          <svg viewBox="0 0 100 100" className="size-full" role="img" aria-label="Schematic map of stored destination coordinates">
-            <rect width="100" height="100" fill="#e7efe9" />
-            {items.map((item) => {
-              const point = project(item.lat, item.lon)
-              return (
-                <a key={item.slug} href={`/destinations/${item.slug}`}>
-                  <circle cx={point.x} cy={point.y} r="1.6" fill="#243E36" />
-                  <text x={point.x + 2} y={point.y} fontSize="2.4" fill="#222722">{item.name}</text>
-                </a>
-              )
-            })}
-          </svg>
+
+        {destinations.isError && (
+          <p className="mt-4" role="alert">The snapshot is not available, so there is nothing to plot.</p>
+        )}
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-[1.4fr_0.8fr]">
+          <DestinationMap
+            className="h-[520px] w-full"
+            items={items}
+            selectedSlug={selected}
+            onSelect={(slug) => {
+              setSelected(slug)
+            }}
+          />
+          <aside className="rounded-[1.5rem] border border-line bg-white p-4">
+            <h2 className="terra-serif text-2xl">Places with coordinates</h2>
+            <p className="mt-1 text-xs text-muted">{items.length} plotted · {missing.length} omitted</p>
+            <ul className="mt-4 max-h-[420px] space-y-2 overflow-auto">
+              {items.map((item) => (
+                <li key={item.slug}>
+                  <button
+                    type="button"
+                    className={`w-full rounded-xl px-3 py-2 text-left text-sm ${selected === item.slug ? 'bg-[color:var(--terra-forest)] text-white' : 'hover:bg-surface-2'}`}
+                    onClick={() => setSelected(item.slug)}
+                  >
+                    <span className="font-semibold">{item.name}</span>
+                    <span className={`mt-0.5 block text-xs ${selected === item.slug ? 'text-white/80' : 'text-muted'}`}>{item.region}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {selectedItem && (
+              <button
+                type="button"
+                className="terra-btn terra-btn-primary mt-4 w-full text-sm"
+                onClick={() => navigate(`/destinations/${selectedItem.slug}`)}
+              >
+                Open {selectedItem.name}
+              </button>
+            )}
+          </aside>
         </div>
-        {!!missing.length && <p className="mt-3 text-xs text-muted">Not plotted because coordinates are unknown: {missing.map((item) => item.name).join(', ')}.</p>}
+
+        {!!missing.length && (
+          <p className="mt-3 text-xs text-muted">
+            Not plotted because coordinates are unknown: {missing.map((item) => item.name).join(', ')}.
+          </p>
+        )}
       </div>
     </div>
   )

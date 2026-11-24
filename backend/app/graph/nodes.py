@@ -8,6 +8,7 @@ from app.config import get_settings
 from app.graph.state import TravelGraphState
 from app.providers.catalog import catalog_provider
 from app.providers.llm import get_llm_provider
+from app.rag.runtime import offload
 
 
 GOA_BUDGET = {
@@ -67,7 +68,7 @@ async def supervisor_node(state: TravelGraphState) -> dict[str, Any]:
     if get_settings().knowledge_mode == "rag":
         from app.services.planner_knowledge import rag_supervisor
 
-        return rag_supervisor(state)
+        return await offload(rag_supervisor, state)
     req = state.get("trip_request") or {}
     prompt = req.get("prompt") or ""
     destination = _parse_destination(prompt, req.get("destination"))
@@ -165,7 +166,7 @@ async def destination_research_node(state: TravelGraphState) -> dict[str, Any]:
     if get_settings().knowledge_mode == "rag":
         from app.services.planner_knowledge import rag_research
 
-        return rag_research(state)
+        return await offload(rag_research, state)
     norm = state.get("normalized_request") or {}
     dest = catalog_provider.lookup_destination(norm.get("destination", "Goa"))
     llm = get_llm_provider()
@@ -197,7 +198,7 @@ async def transport_node(state: TravelGraphState) -> dict[str, Any]:
     if get_settings().knowledge_mode == "rag":
         from app.services.planner_knowledge import rag_transport
 
-        return rag_transport(state)
+        return await offload(rag_transport, state)
     norm = state.get("normalized_request") or {}
     dest = catalog_provider.lookup_destination(norm.get("destination", "Goa"))
     options = dest.get("transport") or []
@@ -219,7 +220,7 @@ async def accommodation_node(state: TravelGraphState) -> dict[str, Any]:
     if get_settings().knowledge_mode == "rag":
         from app.services.planner_knowledge import rag_stay
 
-        return rag_stay(state)
+        return await offload(rag_stay, state)
     norm = state.get("normalized_request") or {}
     dest = catalog_provider.lookup_destination(norm.get("destination", "Goa"))
     hotels = dest.get("hotels") or []
@@ -365,7 +366,7 @@ async def itinerary_node(state: TravelGraphState) -> dict[str, Any]:
     if get_settings().knowledge_mode == "rag":
         from app.services.planner_knowledge import rag_itinerary
 
-        return rag_itinerary(state)
+        return await offload(rag_itinerary, state)
     norm = state.get("normalized_request") or {}
     dest_name = norm.get("destination", "Goa")
     days = int(norm.get("days") or 5)
@@ -459,6 +460,33 @@ async def validator_node(state: TravelGraphState) -> dict[str, Any]:
                     "correctable": True,
                 }
             )
+    seen_titles: dict[str, int] = {}
+    for day in days:
+        for activity in day.get("activities") or []:
+            category = activity.get("category")
+            title = " ".join(str(activity.get("title") or "").casefold().split())
+            if category in {"transport", "note"} or not title:
+                continue
+            if title in seen_titles:
+                findings.append(
+                    {
+                        "code": "duplicate_attraction",
+                        "severity": "warning",
+                        "message": f"{activity.get('title')} is scheduled more than once.",
+                        "correctable": False,
+                    }
+                )
+            else:
+                seen_titles[title] = int(day.get("day_number") or 0)
+            if get_settings().knowledge_mode == "rag" and not activity.get("citation_ids"):
+                findings.append(
+                    {
+                        "code": "uncited_activity",
+                        "severity": "warning",
+                        "message": f"{activity.get('title')} has no supporting excerpt.",
+                        "correctable": False,
+                    }
+                )
     for day in days:
         if day.get("geo_warning"):
             findings.append(
@@ -498,9 +526,11 @@ async def validator_node(state: TravelGraphState) -> dict[str, Any]:
 
 async def aggregator_node(state: TravelGraphState) -> dict[str, Any]:
     if get_settings().knowledge_mode == "rag":
-        from app.services.planner_knowledge import rag_aggregate
+        from app.services.planner_knowledge import ground_plan, rag_aggregate
 
-        return rag_aggregate(state)
+        base = await offload(rag_aggregate, state)
+        plan = await ground_plan(base["final_plan"])
+        return {"final_plan": plan, "messages": base.get("messages") or []}
     norm = state.get("normalized_request") or {}
     budget = state.get("budget_breakdown") or {}
     hotels = state.get("accommodation_options") or []

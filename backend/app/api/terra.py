@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import FileResponse
 from pydantic import Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,8 +17,11 @@ from app.db.session import get_db
 from app.models import SavedDestination, User, UserPreferences
 from app.rag.store import connect, corpus_stats
 from app.schemas.common import APIModel
-from app.services.discovery_service import answer_about, compare_destinations, discover
+from app.rag.runtime import offload
+from app.services.discovery_service import answer_about, compare_destinations, discover, _photo
 from app.rag.store import search_sync
+
+_SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 router = APIRouter(tags=["terra"], dependencies=[Depends(require_csrf)])
 public_router = APIRouter(tags=["terra-public"])
@@ -71,40 +76,64 @@ async def highlights(limit: int = Query(default=8, ge=1, le=24)) -> dict:
     try:
         rows = conn.execute(
             """
-            SELECT d.id, d.slug, d.name, d.region, d.summary, d.themes, d.source_status, d.coordinate_status
+            SELECT d.id, d.slug, d.name, d.region, d.summary, d.themes, d.source_status, d.coordinate_status,
+                   MAX(CASE WHEN di.local_path IS NOT NULL AND di.local_path != '' THEN 1 ELSE 0 END) AS has_photo
             FROM destinations d
             JOIN chunk_destinations cd ON cd.destination_id = d.id
+            LEFT JOIN destination_images di ON di.destination_id = d.id
             WHERE cd.snapshot_id = ?
             GROUP BY d.id
-            ORDER BY d.name
+            ORDER BY has_photo DESC, d.name
             LIMIT ?
             """,
             (stats["snapshot_id"], limit),
         ).fetchall()
+        items = [_dest_summary(row, conn) for row in rows]
     finally:
         conn.close()
-    items = []
-    for row in rows:
-        import json
-
-        try:
-            themes = json.loads(row["themes"] or "[]")
-        except json.JSONDecodeError:
-            themes = []
-        items.append(
-            {
-                "destination_id": row["id"],
-                "slug": row["slug"],
-                "name": row["name"],
-                "region": row["region"],
-                "summary": row["summary"],
-                "themes": themes,
-                "source_status": row["source_status"],
-                "coordinate_status": row["coordinate_status"],
-                "photo": None,
-            }
-        )
     return {"snapshot_id": stats["snapshot_id"], "items": items, "status": "ready"}
+
+
+@public_router.get("/knowledge/media/{slug}")
+async def knowledge_media(slug: str):
+    """Serve one stored Commons file for a destination. Path stays under the knowledge assets root."""
+    if not _SLUG_RE.match(slug):
+        raise HTTPException(status_code=404, detail="Image not found")
+    stats = corpus_stats()
+    if stats.get("status") != "ready":
+        raise HTTPException(status_code=404, detail="Image not found")
+    conn = connect()
+    try:
+        row = conn.execute(
+            """
+            SELECT di.local_path, di.alt
+            FROM destination_images di
+            JOIN destinations d ON d.id = di.destination_id
+            JOIN chunk_destinations cd ON cd.destination_id = d.id
+            WHERE d.slug = ? AND cd.snapshot_id = ? AND di.local_path != ''
+            LIMIT 1
+            """,
+            (slug, stats["snapshot_id"]),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+    root = get_settings().knowledge_root.resolve()
+    assets = (root / "assets").resolve()
+    target = (root / row["local_path"]).resolve()
+    try:
+        target.relative_to(assets)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Image not found") from exc
+    if not target.is_file():
+        raise HTTPException(status_code=404, detail="Image not found")
+    media = "image/jpeg" if target.suffix.lower() in {".jpg", ".jpeg"} else "application/octet-stream"
+    if target.suffix.lower() == ".png":
+        media = "image/png"
+    elif target.suffix.lower() == ".webp":
+        media = "image/webp"
+    return FileResponse(target, media_type=media, filename=target.name, content_disposition_type="inline")
 
 
 @router.get("/destinations")
@@ -136,11 +165,12 @@ async def list_destinations(
         sql += " GROUP BY d.id ORDER BY d.name LIMIT ?"
         args.append(limit)
         rows = conn.execute(sql, args).fetchall()
+        items = [_dest_summary(row, conn) for row in rows]
     finally:
         conn.close()
     return {
         "snapshot_id": stats["snapshot_id"],
-        "items": [_dest_summary(row) for row in rows],
+        "items": items,
     }
 
 
@@ -177,25 +207,33 @@ async def destination_detail(slug: str, user: User = Depends(get_current_user)) 
             """,
             (row["id"],),
         ).fetchall()
+        destination = _dest_summary(row, conn)
+        image_rows = []
+        for image in images:
+            payload = dict(image)
+            if payload.get("local_path"):
+                payload["url"] = f"/api/v1/knowledge/media/{row['slug']}"
+            image_rows.append(payload)
+        payload = {
+            "destination": destination,
+            "summary": row["summary"],
+            "source_status": row["source_status"],
+            "coordinate_status": row["coordinate_status"],
+            "attractions": [dict(a) for a in attractions],
+            "estimates": [dict(e) for e in estimates],
+            "images": image_rows,
+            "sources": [dict(d) for d in docs],
+            "network_tools": {
+                "weather": None,
+                "routing": None,
+                "reason": "ALLOW_NETWORK_TOOLS is false. Straight-line distances are not driving routes."
+                if not get_settings().allow_network_tools
+                else "Optional adapters are enabled.",
+            },
+        }
     finally:
         conn.close()
-    return {
-        "destination": _dest_summary(row),
-        "summary": row["summary"],
-        "source_status": row["source_status"],
-        "coordinate_status": row["coordinate_status"],
-        "attractions": [dict(a) for a in attractions],
-        "estimates": [dict(e) for e in estimates],
-        "images": [dict(i) for i in images],
-        "sources": [dict(d) for d in docs],
-        "network_tools": {
-            "weather": None,
-            "routing": None,
-            "reason": "ALLOW_NETWORK_TOOLS is false. Straight-line distances are not driving routes."
-            if not get_settings().allow_network_tools
-            else "Optional adapters are enabled.",
-        },
-    }
+    return payload
 
 
 @router.get("/destinations/{slug}/attractions")
@@ -209,12 +247,52 @@ async def destination_attractions(slug: str, category: Optional[str] = None, use
 
 @router.post("/destinations/{slug}/ask")
 async def ask(slug: str, payload: AskIn, user: User = Depends(get_current_user)) -> dict:
-    return _snapshot_required(answer_about(slug, payload.query, user.id))
+    return _snapshot_required(await offload(answer_about, slug, payload.query, user.id))
+
+
+@router.get("/knowledge/entities")
+async def knowledge_entities(
+    q: Optional[str] = Query(default=None, max_length=120),
+    entity_type: Optional[str] = Query(default=None, max_length=40),
+    limit: int = Query(default=40, ge=1, le=100),
+    user: User = Depends(get_current_user),
+) -> dict:
+    del user
+    stats = corpus_stats()
+    if stats.get("status") != "ready":
+        raise HTTPException(status_code=503, detail="Knowledge snapshot is not active")
+    conn = connect()
+    try:
+        sql = """
+            SELECT id, entity_type, label, external_key, ref_id
+            FROM knowledge_entities
+            WHERE snapshot_id = ?
+        """
+        args: list[Any] = [stats["snapshot_id"]]
+        if entity_type:
+            sql += " AND entity_type = ?"
+            args.append(entity_type)
+        if q:
+            sql += " AND lower(label) LIKE ?"
+            args.append(f"%{q.lower()}%")
+        sql += " ORDER BY entity_type, label LIMIT ?"
+        args.append(limit)
+        rows = conn.execute(sql, args).fetchall()
+    finally:
+        conn.close()
+    return {"snapshot_id": stats["snapshot_id"], "items": [dict(row) for row in rows]}
 
 
 @router.get("/destinations/{slug}/graph")
-async def destination_graph(slug: str, user: User = Depends(get_current_user)) -> dict:
+async def destination_graph(
+    slug: str,
+    hops: int = Query(default=1, ge=1, le=2),
+    predicate: Optional[str] = Query(default=None, max_length=64),
+    user: User = Depends(get_current_user),
+) -> dict:
     del user
+    from app.rag.graphwalk import bfs_evidence
+
     conn = connect()
     try:
         dest = conn.execute("SELECT id, slug, name FROM destinations WHERE slug = ?", (slug,)).fetchone()
@@ -228,46 +306,110 @@ async def destination_graph(slug: str, user: User = Depends(get_current_user)) -
             (stats["snapshot_id"], dest["id"]),
         ).fetchone()
         if entity is None:
-            return {"nodes": [], "edges": [], "snapshot_id": stats["snapshot_id"]}
-        edges = conn.execute(
-            """
-            SELECT id, subject_id, predicate, object_id, evidence_chunk_id, method, confidence
-            FROM knowledge_relationships
-            WHERE snapshot_id = ? AND (subject_id = ? OR object_id = ?)
-            """,
-            (stats["snapshot_id"], entity["id"], entity["id"]),
-        ).fetchall()
+            entity = conn.execute(
+                "SELECT id FROM knowledge_entities WHERE snapshot_id = ? AND external_key = ?",
+                (stats["snapshot_id"], f"destination:{slug}"),
+            ).fetchone()
+        if entity is None:
+            return {
+                "nodes": [],
+                "edges": [],
+                "seed": None,
+                "snapshot_id": stats["snapshot_id"],
+                "note": "No destination entity is stored for this slug.",
+            }
+        edge_rows = [
+            dict(row)
+            for row in conn.execute(
+                """
+                SELECT id, subject_id, predicate, object_id, evidence_chunk_id, method, confidence
+                FROM knowledge_relationships
+                WHERE snapshot_id = ?
+                """,
+                (stats["snapshot_id"],),
+            ).fetchall()
+        ]
+        if predicate:
+            edge_rows = [edge for edge in edge_rows if edge["predicate"] == predicate]
+        walked = bfs_evidence(seed_entity_ids=[entity["id"]], edges=edge_rows, max_hops=hops)
+        if hops == 1:
+            # Keep direct edges even when they have no further expansion.
+            direct = [edge for edge in edge_rows if edge["subject_id"] == entity["id"] or edge["object_id"] == entity["id"]]
+            seen_ids = {edge["id"] for edge in walked}
+            for edge in direct:
+                if edge["id"] not in seen_ids:
+                    walked.append({**edge, "hop": 1, "via": entity["id"]})
         ids = {entity["id"]}
-        for edge in edges:
+        for edge in walked:
             ids.add(edge["subject_id"])
             ids.add(edge["object_id"])
         nodes = []
         if ids:
             qmarks = ",".join("?" for _ in ids)
-            nodes = conn.execute(
-                f"SELECT id, entity_type, label, external_key FROM knowledge_entities WHERE id IN ({qmarks})",
-                tuple(ids),
-            ).fetchall()
+            nodes = [
+                dict(row)
+                for row in conn.execute(
+                    f"SELECT id, entity_type, label, external_key, ref_id FROM knowledge_entities WHERE id IN ({qmarks})",
+                    tuple(ids),
+                ).fetchall()
+            ]
+        evidence = {}
+        chunk_ids = [edge["evidence_chunk_id"] for edge in walked if edge.get("evidence_chunk_id")]
+        if chunk_ids:
+            qmarks = ",".join("?" for _ in chunk_ids)
+            for row in conn.execute(
+                f"""
+                SELECT id, section_path, substr(text, 1, 280) AS excerpt
+                FROM knowledge_chunks WHERE id IN ({qmarks})
+                """,
+                tuple(chunk_ids),
+            ).fetchall():
+                evidence[row["id"]] = {
+                    "chunk_id": row["id"],
+                    "section_path": row["section_path"],
+                    "excerpt": row["excerpt"],
+                }
+        edges = []
+        for edge in walked:
+            item = dict(edge)
+            if edge.get("evidence_chunk_id") and edge["evidence_chunk_id"] in evidence:
+                item["evidence"] = evidence[edge["evidence_chunk_id"]]
+            edges.append(item)
     finally:
         conn.close()
     return {
         "snapshot_id": stats["snapshot_id"],
-        "nodes": [dict(n) for n in nodes],
-        "edges": [dict(e) for e in edges],
-        "note": "within_80km_straight_line is haversine, not a road connection.",
+        "seed": {"id": entity["id"], "slug": dest["slug"], "name": dest["name"]},
+        "hops": hops,
+        "predicate": predicate,
+        "nodes": nodes,
+        "edges": edges,
+        "note": "within_80km_straight_line is haversine, not a road connection. Graph edges are not transport routes.",
     }
 
 
 @router.post("/discovery/search")
 async def discovery_search(payload: SearchIn, user: User = Depends(get_current_user)) -> dict:
     return _snapshot_required(
-        discover(query=payload.query, user_id=user.id, filters=payload.filters, strategy=payload.strategy)
+        await offload(
+            discover,
+            query=payload.query,
+            user_id=user.id,
+            filters=payload.filters,
+            strategy=payload.strategy,
+        )
     )
 
 
 @router.post("/retrieval/search")
 async def retrieval_search(payload: SearchIn, user: User = Depends(get_current_user)) -> dict:
-    result = search_sync(query=payload.query, user_id=user.id, strategy=payload.strategy, filters=payload.filters)
+    result = await offload(
+        search_sync,
+        query=payload.query,
+        user_id=user.id,
+        strategy=payload.strategy,
+        filters=payload.filters,
+    )
     return _snapshot_required(result)
 
 
@@ -432,7 +574,7 @@ async def for_you(user: User = Depends(get_current_user), db: AsyncSession = Dep
     interests = " ".join(str(i) for i in (prefs.interests if prefs else []))
     if not interests.strip():
         return {"results": [], "generation_mode": "explicit_interest_match", "note": "No stated interests yet."}
-    found = discover(query=interests, user_id=user.id, strategy="keyword")
+    found = await offload(discover, query=interests, user_id=user.id, strategy="keyword")
     found["generation_mode"] = "explicit_interest_match"
     found["note"] = "Ranked from interests you saved, using keyword retrieval. This is not inferred tracking."
     return found
@@ -465,7 +607,7 @@ async def retrieval_benchmark(payload: RetrievalBenchIn, user: User = Depends(ge
         slugs = {row["slug"] for row in conn.execute("SELECT slug FROM destinations").fetchall()}
     finally:
         conn.close()
-    strategies = payload.strategies[:4]
+    strategies = payload.strategies[:6]
     report = []
     for strategy in strategies:
         measured = []
@@ -475,7 +617,7 @@ async def retrieval_benchmark(payload: RetrievalBenchIn, user: User = Depends(ge
             if expected not in slugs:
                 skipped.append({"id": case.get("id"), "reason": "expected_destination_not_in_snapshot"})
                 continue
-            found = discover(query=case["query"], user_id=user.id, strategy=strategy)
+            found = await offload(discover, query=case["query"], user_id=user.id, strategy=strategy)
             slugs_ranked = [r.get("slug") for r in found.get("results") or []]
             hit = expected in slugs_ranked[:3]
             measured.append({"id": case.get("id"), "hit_at_3": hit, "ranked": slugs_ranked[:3]})
@@ -500,23 +642,27 @@ async def retrieval_benchmark(payload: RetrievalBenchIn, user: User = Depends(ge
     }
 
 
-def _dest_summary(row) -> dict:
+def _dest_summary(row, conn=None) -> dict:
     import json
 
     try:
         themes = json.loads(row["themes"] or "[]")
     except (TypeError, json.JSONDecodeError):
-        themes = row["themes"]
+        themes = row["themes"] if isinstance(row["themes"], list) else []
+    photo = None
+    if conn is not None:
+        photo = _photo(conn, row["id"], row["slug"])
     return {
         "destination_id": row["id"],
         "slug": row["slug"],
         "name": row["name"],
         "region": row["region"],
-        "kind": row["kind"],
+        "kind": row["kind"] if "kind" in row.keys() else None,
         "summary": row["summary"],
         "themes": themes,
         "source_status": row["source_status"],
         "coordinate_status": row["coordinate_status"],
-        "lat": row["lat"],
-        "lon": row["lon"],
+        "lat": row["lat"] if "lat" in row.keys() else None,
+        "lon": row["lon"] if "lon" in row.keys() else None,
+        "photo": photo,
     }

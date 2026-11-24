@@ -1,7 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { Bookmark, Map as MapIcon, Scale } from 'lucide-react'
+import { Map as MapIcon } from 'lucide-react'
+import { DestinationCard } from '@/components/terra/DestinationCard'
 import { ApiError } from '@/lib/api'
 import {
   readCompareIds,
@@ -15,33 +16,71 @@ import {
   type DiscoveryResult,
 } from '@/lib/terra'
 
+const FILTERS = [
+  { id: 'all', label: 'All matches' },
+  { id: 'waterfalls', label: 'Waterfalls' },
+  { id: 'beaches', label: 'Beaches' },
+  { id: 'culture', label: 'Culture' },
+  { id: 'mountains', label: 'Mountains' },
+]
+
 export default function ExplorePage() {
   const location = useLocation()
   const navigate = useNavigate()
   const seeded = (location.state as { query?: string } | null)?.query || readPendingQuery() || readExploreQuery()
   const [query, setQuery] = useState(seeded)
-  useEffect(() => {
-    if (readPendingQuery()) takePendingQuery()
-  }, [])
+  const [filter, setFilter] = useState('all')
   const [compare, setCompare] = useState<string[]>(readCompareIds())
   const [result, setResult] = useState<DiscoveryResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState<Record<string, string>>({})
+  const requestId = useRef(0)
+  const bootstrapped = useRef(false)
 
   const search = useMutation({
     mutationFn: (text: string) => terraApi.search(text, 'hybrid_rerank'),
-    onSuccess: (data) => {
+    onSuccess: (data, text) => {
       setResult(data)
       setError(null)
+      rememberExploreQuery(text)
     },
     onError: (err) => setError(err instanceof ApiError ? err.message : 'Search failed'),
   })
+
+  useEffect(() => {
+    if (readPendingQuery()) takePendingQuery()
+    if (bootstrapped.current) return
+    bootstrapped.current = true
+    const text = query.trim()
+    if (text.length >= 2) {
+      const id = ++requestId.current
+      search.mutate(text, {
+        onSuccess: (data) => {
+          if (id === requestId.current) {
+            setResult(data)
+            setError(null)
+          }
+        },
+      })
+    }
+    // Seeded search once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const submit = (event?: FormEvent) => {
     event?.preventDefault()
     const text = query.trim()
     if (text.length < 2) return
-    rememberExploreQuery(text)
-    search.mutate(text)
+    const id = ++requestId.current
+    search.mutate(text, {
+      onSuccess: (data) => {
+        if (id === requestId.current) {
+          setResult(data)
+          setError(null)
+          rememberExploreQuery(text)
+        }
+      },
+    })
   }
 
   const onCompare = (id: string) => {
@@ -49,6 +88,12 @@ export default function ExplorePage() {
     setCompare(next)
     writeCompareIds(next)
   }
+
+  const visible = (result?.results ?? []).filter((item) => {
+    if (filter === 'all') return true
+    const blob = `${item.matched_preferences.join(' ')} ${(item.themes ?? []).join(' ')} ${item.summary ?? ''}`.toLowerCase()
+    return blob.includes(filter)
+  })
 
   return (
     <div className="terra-scope -mx-4 -mt-5 min-h-full px-4 py-6 pb-28 lg:-mx-6 lg:px-6 lg:pb-6">
@@ -58,17 +103,39 @@ export default function ExplorePage() {
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Terra</p>
             <h1 className="terra-serif text-4xl">Explore</h1>
           </div>
-          <Link to="/explore/map" className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-4 py-2 text-sm font-semibold">
-            <MapIcon className="size-4" /> Map
+          <Link to="/explore/map" className="terra-btn terra-btn-ghost text-sm">
+            <MapIcon className="size-4" aria-hidden /> Map
           </Link>
         </div>
-        <form onSubmit={submit} className="mt-5 flex flex-col gap-3 rounded-3xl border border-line bg-white p-3 sm:flex-row">
+
+        <form onSubmit={submit} className="mt-5 flex flex-col gap-3 rounded-[1.5rem] border border-line bg-white p-3 sm:flex-row sm:items-center">
           <label className="sr-only" htmlFor="explore-query">Search</label>
-          <input id="explore-query" value={query} onChange={(e) => setQuery(e.target.value)} className="min-w-0 flex-1 rounded-2xl bg-surface-2 px-4 py-3 outline-none" placeholder="quiet hills, waterfalls, culture" />
-          <button className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white" type="submit" disabled={search.isPending}>
+          <input
+            id="explore-query"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="min-w-0 flex-1 rounded-2xl bg-surface-2 px-4 py-3 outline-none"
+            placeholder="quiet hills, waterfalls, culture"
+          />
+          <button className="terra-btn terra-btn-primary shrink-0" type="submit" disabled={search.isPending}>
             {search.isPending ? 'Searching…' : 'Search'}
           </button>
         </form>
+
+        <div className="mt-4 flex flex-wrap gap-2" aria-label="Preference filters">
+          {FILTERS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${filter === item.id ? 'border-[color:var(--terra-forest)] bg-[color:var(--terra-forest)] text-white' : 'border-line bg-white text-muted'}`}
+              aria-pressed={filter === item.id}
+              onClick={() => setFilter(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
         {error && <p className="mt-4 rounded-2xl border border-line bg-white p-4 text-sm" role="alert">{error}</p>}
         {result && (
           <p className="mt-4 text-xs text-muted">
@@ -76,54 +143,50 @@ export default function ExplorePage() {
             {result.warnings?.length ? ` · ${result.warnings.join(', ')}` : ''}
           </p>
         )}
+        {search.isPending && !result && (
+          <ul className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-hidden>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <li key={index} className="terra-card h-72 animate-pulse bg-surface-2" />
+            ))}
+          </ul>
+        )}
         {result?.insufficient_evidence && <p className="mt-4 text-sm">No destination in the snapshot matched this query.</p>}
+        {!search.isPending && result && !result.insufficient_evidence && !visible.length && (
+          <p className="mt-4 text-sm text-muted">No results for that filter. Try All matches.</p>
+        )}
+
         <ul className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {(result?.results ?? []).map((item) => (
-            <li key={item.slug} className="flex flex-col rounded-3xl border border-line bg-white p-5">
-              <p className="text-xs uppercase tracking-wide text-muted">{item.region}</p>
-              <h2 className="terra-serif text-3xl">{item.name}</h2>
-              <p className="mt-2 text-xs text-muted">{item.source_status === 'synthetic_test' ? 'Synthetic fixture — not a published guide.' : item.summary || 'No stored summary.'}</p>
-              <p className="mt-3 text-sm">Matched: {item.matched_preferences.join(', ') || 'none labeled'}</p>
-              <p className="text-sm text-muted">Unknown: {item.unknown_preferences.join(', ')}</p>
-              <p className="mt-2 text-xs text-muted">{item.evidence_count} cited excerpts</p>
-              {item.evidence[0] && (
-                <blockquote className="mt-3 border-l-2 border-primary pl-3 text-sm text-muted">{item.evidence[0].excerpt}</blockquote>
-              )}
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link to={`/destinations/${item.slug}`} className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-white">Open</Link>
-                <button type="button" className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-xs" onClick={() => item.destination_id && onCompare(item.destination_id)}>
-                  <Scale className="size-3" /> {compare.includes(item.destination_id) ? 'Selected' : 'Compare'}
-                </button>
-                <SaveButton id={item.destination_id} />
-              </div>
+          {visible.map((item) => (
+            <li key={item.slug}>
+              <DestinationCard
+                item={item}
+                compareSelected={compare.includes(item.destination_id)}
+                onCompare={() => item.destination_id && onCompare(item.destination_id)}
+                saveLabel={saved[item.destination_id] || 'Save'}
+                onSave={async () => {
+                  if (!item.destination_id) return
+                  await terraApi.save(item.destination_id)
+                  setSaved((prev) => ({ ...prev, [item.destination_id]: 'Saved' }))
+                }}
+              />
             </li>
           ))}
         </ul>
+
         {compare.length > 0 && (
-          <div className="sticky bottom-20 mt-6 flex items-center justify-between rounded-2xl bg-primary px-4 py-3 text-sm text-white lg:bottom-4">
+          <div className="sticky bottom-20 z-20 mt-6 flex items-center justify-between rounded-2xl bg-[color:var(--terra-forest)] px-4 py-3 text-sm text-white lg:bottom-4">
             <span>{compare.length} selected (max 3)</span>
-            <button type="button" className="rounded-full bg-white px-3 py-1 font-semibold text-primary" onClick={() => navigate('/explore/compare')} disabled={compare.length < 2}>
+            <button
+              type="button"
+              className="rounded-full bg-white px-3 py-1 font-semibold text-[color:var(--terra-forest)]"
+              onClick={() => navigate('/explore/compare')}
+              disabled={compare.length < 2}
+            >
               Compare
             </button>
           </div>
         )}
       </div>
     </div>
-  )
-}
-
-function SaveButton({ id }: { id: string }) {
-  const [label, setLabel] = useState('Save')
-  return (
-    <button
-      type="button"
-      className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-xs"
-      onClick={async () => {
-        await terraApi.save(id)
-        setLabel('Saved')
-      }}
-    >
-      <Bookmark className="size-3" /> {label}
-    </button>
   )
 }

@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "method": "editorial_planning_band",
+  "confidence": "low",
+  "checked_at": "2026-11-24",
+  "currency": "INR",
+  "disclaimer": "Wide planning envelopes written for the offline demo. They are not quotes, fares, room rates, or availability. Intercity transport and road distances are omitted on purpose.",
+  "by_kind": {
+    "city": {
+      "accommodation": {"low_inr": 1500, "high_inr": 6000, "basis": "per_room_per_night"},
+      "meals": {"low_inr": 600, "high_inr": 1800, "basis": "per_person_per_day"},
+      "local_travel": {"low_inr": 300, "high_inr": 1500, "basis": "per_person_per_day"},
+      "attractions": {"low_inr": 0, "high_inr": 1500, "basis": "per_person_per_day"},
+      "contingency": {"low_inr": 300, "high_inr": 1000, "basis": "per_person_per_day"}
+    },
+    "region": {
+      "accommodation": {"low_inr": 1500, "high_inr": 7000, "basis": "per_room_per_night"},
+      "meals": {"low_inr": 700, "high_inr": 2000, "basis": "per_person_per_day"},
+      "local_travel": {"low_inr": 400, "high_inr": 1800, "basis": "per_person_per_day"},
+      "attractions": {"low_inr": 0, "high_inr": 2000, "basis": "per_person_per_day"},
+      "contingency": {"low_inr": 400, "high_inr": 1200, "basis": "per_person_per_day"}
+    },
+    "village": {
+      "accommodation": {"low_inr": 800, "high_inr": 3500, "basis": "per_room_per_night"},
+      "meals": {"low_inr": 400, "high_inr": 1200, "basis": "per_person_per_day"},
+      "local_travel": {"low_inr": 200, "high_inr": 1000, "basis": "per_person_per_day"},
+      "attractions": {"low_inr": 0, "high_inr": 800, "basis": "per_person_per_day"},
+      "contingency": {"low_inr": 200, "high_inr": 800, "basis": "per_person_per_day"}
+    },
+    "area": {
+      "accommodation": {"low_inr": 800, "high_inr": 3500, "basis": "per_room_per_night"},
+      "meals": {"low_inr": 400, "high_inr": 1200, "basis": "per_person_per_day"},
+      "local_travel": {"low_inr": 200, "high_inr": 1200, "basis": "per_person_per_day"},
+      "attractions": {"low_inr": 0, "high_inr": 800, "basis": "per_person_per_day"},
+      "contingency": {"low_inr": 200, "high_inr": 800, "basis": "per_person_per_day"}
+    }
+  }
+}

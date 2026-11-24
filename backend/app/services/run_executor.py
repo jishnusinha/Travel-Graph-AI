@@ -319,13 +319,20 @@ async def execute_run(db: AsyncSession, run_id: str) -> AgentRun:
             run.tool_cost_usd = round(acc["tool"], 6)
             run.total_cost_usd = round(acc["model"] + acc["tool"], 6)
             run.cost_provenance = "demo"
-        elif settings.knowledge_mode == "rag" and demo:
-            run.input_tokens = 0
-            run.output_tokens = 0
-            run.model_cost_usd = 0.0
-            run.tool_cost_usd = 0.0
-            run.total_cost_usd = 0.0
-            run.cost_provenance = "local_retrieval_no_llm"
+        elif settings.knowledge_mode == "rag":
+            mode = (run.final_plan or {}).get("generation_mode") or "deterministic_evidence"
+            run.generation_provenance = mode
+            if mode == "openai_grounded":
+                run.model_name = settings.openai_model or "openai"
+                run.cost_provenance = "openai_unmetered"
+            else:
+                run.model_name = "deterministic-evidence"
+                run.input_tokens = 0
+                run.output_tokens = 0
+                run.model_cost_usd = 0.0
+                run.tool_cost_usd = 0.0
+                run.total_cost_usd = 0.0
+                run.cost_provenance = "local_retrieval_no_llm"
 
         run.completed_at = utcnow()
         if run.started_at:
